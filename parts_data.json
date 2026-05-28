@@ -2,629 +2,1151 @@
   "速锐达(SP)": [
     {
       "part_number": "11701300084",
-      "part_name": "1WL/PAG/BLACK FAN BLADE"
+      "part_name": "1WL/PAG/BLACK FAN BLADE",
+      "measure_fields": [
+        "轮毂外径尺寸"
+      ]
     },
     {
       "part_number": "30070023016",
-      "part_name": "315/7-7/30/PAG/OPL/14/5/B"
+      "part_name": "315/7-7/30/PAG/OPL/14/5/B",
+      "measure_fields": []
     },
     {
       "part_number": "30040013014",
-      "part_name": "440/4-4/30/PPG/8MR/13,5/A"
+      "part_name": "440/4-4/30/PPG/8MR/13,5/A",
+      "measure_fields": []
     },
     {
       "part_number": "51000000000",
-      "part_name": "Z-Pitch Setting Pin/3.5° Offset/PAG"
+      "part_name": "Z-Pitch Setting Pin/3.5° Offset/PAG",
+      "measure_fields": []
     },
     {
       "part_number": "17102400008",
-      "part_name": "7ZL/PAG/GREY Fan blade"
+      "part_name": "7ZL/PAG/GREY Fan blade",
+      "measure_fields": [
+        "仿形间隙测量数据",
+        "轮毂外径尺寸"
+      ]
     },
     {
       "part_number": "17132400009",
-      "part_name": "7ZR/PAG/GREY Fan blade"
+      "part_name": "7ZR/PAG/GREY Fan blade",
+      "measure_fields": [
+        "仿形间隙测量数据",
+        "轮毂外径尺寸"
+      ]
     },
     {
       "part_number": "65910000000000000000",
-      "part_name": "Impeller/312/PAG/5-5/25"
+      "part_name": "Impeller/312/PAG/5-5/25",
+      "measure_fields": []
     },
     {
       "part_number": "65920000000000000000",
-      "part_name": "Vane/312/PAG/14-14/M6-M8"
+      "part_name": "Vane/312/PAG/14-14/M6-M8",
+      "measure_fields": []
     },
     {
       "part_number": "65930000000000000000",
-      "part_name": "SmartRIM/312/PAG/M6-M8"
+      "part_name": "SmartRIM/312/PAG/M6-M8",
+      "measure_fields": []
     },
     {
       "part_number": "65910000000000000001",
-      "part_name": "Impeller/312/PAG/5-5/25/DustFree"
+      "part_name": "Impeller/312/PAG/5-5/25/DustFree",
+      "measure_fields": []
     },
     {
       "part_number": "30070022523",
-      "part_name": "550/7-7/25/PAG/OPL/22,23/4,76/B with metal insert"
+      "part_name": "550/7-7/25/PAG/OPL/22,23/4,76/B with metal insert",
+      "measure_fields": []
     },
     {
       "part_number": "30070022517",
-      "part_name": "550/7-7/25/PAG/OPL/22,23/4,76/B"
+      "part_name": "550/7-7/25/PAG/OPL/22,23/4,76/B",
+      "measure_fields": []
     },
     {
       "part_number": "30080162505",
-      "part_name": "355/8-8/25/PPG/OPL/292915/A"
+      "part_name": "355/8-8/25/PPG/OPL/292915/A",
+      "measure_fields": []
     }
   ],
   "AQ": [
     {
       "part_number": "15100200018",
-      "part_name": "5ZL/PAG Fan Blade"
+      "part_name": "5ZL/PAG Fan Blade",
+      "measure_fields": [
+        "仿形间隙测量数据",
+        "轮毂外径尺寸"
+      ]
     },
     {
       "part_number": "19730200030",
-      "part_name": "9W2R/PAG Fan Blade"
+      "part_name": "9W2R/PAG Fan Blade",
+      "measure_fields": [
+        "仿形间隙测量数据",
+        "轮毂外径尺寸"
+      ]
     },
     {
       "part_number": "19730500030",
-      "part_name": "9W2R/PAG/BLACK Fan blade"
+      "part_name": "9W2R/PAG/BLACK Fan blade",
+      "measure_fields": [
+        "仿形间隙测量数据",
+        "轮毂外径尺寸"
+      ]
     }
   ],
   "新*": [
     {
       "part_number": "24000706400",
-      "part_name": "Boss/625127/75"
+      "part_name": "Boss/625127/75",
+      "measure_fields": [
+        "内径尺寸",
+        "裙边厚度",
+        "裙边高度",
+        "轴套总长"
+      ]
     },
     {
       "part_number": "24000706200",
-      "part_name": "Boss/625123/75"
+      "part_name": "Boss/625123/75",
+      "measure_fields": [
+        "内径尺寸",
+        "裙边厚度",
+        "裙边高度",
+        "轴套总长"
+      ]
     },
     {
       "part_number": "24000706100",
-      "part_name": "Uni-Boss/524522/75"
+      "part_name": "Uni-Boss/524522/75",
+      "measure_fields": [
+        "内径尺寸",
+        "裙边厚度",
+        "裙边高度",
+        "轴套总长"
+      ]
     },
     {
       "part_number": "24000706500",
-      "part_name": "Uni-Boss/524518/75"
+      "part_name": "Uni-Boss/524518/75",
+      "measure_fields": [
+        "内径尺寸",
+        "裙边厚度",
+        "裙边高度",
+        "轴套总长"
+      ]
     },
     {
       "part_number": "24000706000",
-      "part_name": "Uni-Boss/424018/75-mould"
+      "part_name": "Uni-Boss/424018/75-mould",
+      "measure_fields": [
+        "内径尺寸",
+        "裙边厚度",
+        "裙边高度",
+        "轴套总长"
+      ]
     },
     {
       "part_number": "4SB04240171",
-      "part_name": "Uni-Boss/424017"
+      "part_name": "Uni-Boss/424017",
+      "measure_fields": [
+        "内径尺寸",
+        "裙边厚度",
+        "裙边高度",
+        "轴套总长"
+      ]
     },
     {
       "part_number": "24000705900",
-      "part_name": "Boss/424013/75-mould"
+      "part_name": "Boss/424013/75-mould",
+      "measure_fields": [
+        "内径尺寸",
+        "裙边厚度",
+        "裙边高度",
+        "轴套总长"
+      ]
     },
     {
       "part_number": "21120708103",
-      "part_name": "Z-retaining plate/12/000075"
+      "part_name": "Z-retaining plate/12/000075",
+      "measure_fields": [
+        "内径尺寸",
+        "轮毂间隙"
+      ]
     },
     {
       "part_number": "21120702403",
-      "part_name": "Z-retaining plate/12"
+      "part_name": "Z-retaining plate/12",
+      "measure_fields": [
+        "内径尺寸",
+        "轮毂间隙"
+      ]
     },
     {
       "part_number": "27050701403",
-      "part_name": "W-Retaining Plate/5/LP"
+      "part_name": "W-Retaining Plate/5/LP",
+      "measure_fields": [
+        "内径尺寸",
+        "轮毂间隙"
+      ]
     },
     {
       "part_number": "20060700103",
-      "part_name": "H-Retaining Plate/6"
+      "part_name": "H-Retaining Plate/6",
+      "measure_fields": [
+        "内径尺寸",
+        "轮毂间隙"
+      ]
     }
   ],
   "金*": [
     {
       "part_number": "4SB08273231",
-      "part_name": "Uni-Boss/827323/75"
+      "part_name": "Uni-Boss/827323/75",
+      "measure_fields": [
+        "内径尺寸",
+        "裙边厚度",
+        "裙边高度",
+        "轴套总长"
+      ]
     },
     {
       "part_number": "24000708300",
-      "part_name": "Uni-Boss/827334/75"
+      "part_name": "Uni-Boss/827334/75",
+      "measure_fields": [
+        "内径尺寸",
+        "裙边厚度",
+        "裙边高度",
+        "轴套总长"
+      ]
     },
     {
       "part_number": "24000707800",
-      "part_name": "Uni-Boss/827327/75"
+      "part_name": "Uni-Boss/827327/75",
+      "measure_fields": [
+        "内径尺寸",
+        "裙边厚度",
+        "裙边高度",
+        "轴套总长"
+      ]
     },
     {
       "part_number": "27000710406",
-      "part_name": "W-Boss/627223/90/P"
+      "part_name": "W-Boss/627223/90/P",
+      "measure_fields": [
+        "内径尺寸",
+        "裙边厚度",
+        "裙边高度",
+        "轴套总长"
+      ]
     },
     {
       "part_number": "27000712011",
-      "part_name": "W-Boss/1129041/90P/China"
+      "part_name": "W-Boss/1129041/90P/China",
+      "measure_fields": [
+        "内径尺寸",
+        "裙边厚度",
+        "裙边高度",
+        "轴套总长"
+      ]
     },
     {
       "part_number": "27000712111",
-      "part_name": "W-Boss/1129046"
+      "part_name": "W-Boss/1129046",
+      "measure_fields": [
+        "内径尺寸",
+        "裙边厚度",
+        "裙边高度",
+        "轴套总长"
+      ]
     },
     {
       "part_number": "24000707511",
-      "part_name": "Boss/629046"
+      "part_name": "Boss/629046",
+      "measure_fields": [
+        "内径尺寸",
+        "裙边厚度",
+        "裙边高度",
+        "轴套总长"
+      ]
     },
     {
       "part_number": "24000708900",
-      "part_name": "Uni-Boss/1129040/75"
+      "part_name": "Uni-Boss/1129040/75",
+      "measure_fields": [
+        "内径尺寸",
+        "裙边厚度",
+        "裙边高度",
+        "轴套总长"
+      ]
     },
     {
       "part_number": "17170700087",
-      "part_name": "TR7ZR/AL Fan Blades"
+      "part_name": "TR7ZR/AL Fan Blades",
+      "measure_fields": [
+        "轮毂外径尺寸",
+        "扇叶重量"
+      ]
     },
     {
       "part_number": "24000706300",
-      "part_name": "Boss/627327/75"
+      "part_name": "Boss/627327/75",
+      "measure_fields": [
+        "内径尺寸",
+        "裙边厚度",
+        "裙边高度",
+        "轴套总长"
+      ]
     },
     {
       "part_number": "20100700103",
-      "part_name": "H-Retaining Plate/10"
+      "part_name": "H-Retaining Plate/10",
+      "measure_fields": [
+        "内径尺寸",
+        "轮毂间隙"
+      ]
     },
     {
       "part_number": "27040701303",
-      "part_name": "W-Retaining Plate/4/LP"
+      "part_name": "W-Retaining Plate/4/LP",
+      "measure_fields": [
+        "内径尺寸",
+        "轮毂间隙"
+      ]
     },
     {
       "part_number": "24900719211",
-      "part_name": "Boss extension/10/75"
+      "part_name": "Boss extension/10/75",
+      "measure_fields": [
+        "内径尺寸",
+        "裙边厚度",
+        "裙边高度",
+        "轴套总长"
+      ]
     },
     {
       "part_number": "24900719411",
-      "part_name": "Boss extension/20/75"
+      "part_name": "Boss extension/20/75",
+      "measure_fields": [
+        "内径尺寸",
+        "裙边厚度",
+        "裙边高度",
+        "轴套总长"
+      ]
     },
     {
       "part_number": "24900719611",
-      "part_name": "Boss extension/40/75"
+      "part_name": "Boss extension/40/75",
+      "measure_fields": [
+        "内径尺寸",
+        "裙边厚度",
+        "裙边高度",
+        "轴套总长"
+      ]
     },
     {
       "part_number": "27010719211",
-      "part_name": "Boss extension /20/90"
+      "part_name": "Boss extension /20/90",
+      "measure_fields": [
+        "内径尺寸",
+        "裙边厚度",
+        "裙边高度",
+        "轴套总长"
+      ]
     },
     {
       "part_number": "27010719411",
-      "part_name": "Boss extension /40/90"
+      "part_name": "Boss extension /40/90",
+      "measure_fields": [
+        "内径尺寸",
+        "裙边厚度",
+        "裙边高度",
+        "轴套总长"
+      ]
     },
     {
       "part_number": "28000700800",
-      "part_name": "G-Pocket"
+      "part_name": "G-Pocket",
+      "measure_fields": []
     },
     {
       "part_number": "21096703011",
-      "part_name": "Z-Retaining plate/9L/000015"
+      "part_name": "Z-Retaining plate/9L/000015",
+      "measure_fields": [
+        "内径尺寸",
+        "轮毂间隙"
+      ]
     },
     {
       "part_number": "21096730011",
-      "part_name": "Z-Retaining Plate/9L/127/6x8.5/BC152.4"
+      "part_name": "Z-Retaining Plate/9L/127/6x8.5/BC152.4",
+      "measure_fields": [
+        "内径尺寸",
+        "轮毂间隙"
+      ]
     },
     {
       "part_number": "21070708109",
-      "part_name": "Z-Retaining Plate/7/000075"
+      "part_name": "Z-Retaining Plate/7/000075",
+      "measure_fields": [
+        "内径尺寸",
+        "轮毂间隙"
+      ]
     },
     {
       "part_number": "21080708109",
-      "part_name": "Z-Retaining Plate/8/000075"
+      "part_name": "Z-Retaining Plate/8/000075",
+      "measure_fields": [
+        "内径尺寸",
+        "轮毂间隙"
+      ]
     },
     {
       "part_number": "23090702801",
-      "part_name": "PMAX40-Retaining Plate/9"
+      "part_name": "PMAX40-Retaining Plate/9",
+      "measure_fields": [
+        "内径尺寸",
+        "轮毂间隙"
+      ]
     },
     {
       "part_number": "23090780501",
-      "part_name": "PMAX40-Retaining Plate/EV60"
+      "part_name": "PMAX40-Retaining Plate/EV60",
+      "measure_fields": [
+        "内径尺寸",
+        "轮毂间隙"
+      ]
     },
     {
       "part_number": "23090780001",
-      "part_name": "PMAX40-Hub Plate/9/BM39"
+      "part_name": "PMAX40-Hub Plate/9/BM39",
+      "measure_fields": [
+        "内径尺寸",
+        "轮毂间隙"
+      ]
     },
     {
       "part_number": "23090714101",
-      "part_name": "PMAX40-Hub Plate/9/Flange"
+      "part_name": "PMAX40-Hub Plate/9/Flange",
+      "measure_fields": [
+        "内径尺寸",
+        "轮毂间隙"
+      ]
     },
     {
       "part_number": "20140700103",
-      "part_name": "H-retaining plate/14"
+      "part_name": "H-retaining plate/14",
+      "measure_fields": [
+        "内径尺寸",
+        "轮毂间隙"
+      ]
     },
     {
       "part_number": "20140700303",
-      "part_name": "H-Hub plate/14/000019"
+      "part_name": "H-Hub plate/14/000019",
+      "measure_fields": [
+        "内径尺寸",
+        "轮毂间隙"
+      ]
     },
     {
       "part_number": "20140708103",
-      "part_name": "H-retaining plate/14/000075"
+      "part_name": "H-retaining plate/14/000075",
+      "measure_fields": [
+        "内径尺寸",
+        "轮毂间隙"
+      ]
     },
     {
       "part_number": "21091802400",
-      "part_name": "Z-Retaining Plate/9/110/Zinc"
+      "part_name": "Z-Retaining Plate/9/110/Zinc",
+      "measure_fields": [
+        "内径尺寸",
+        "轮毂间隙"
+      ]
     },
     {
       "part_number": "21090708103",
-      "part_name": "Z-Retaining Plate/9/000075"
+      "part_name": "Z-Retaining Plate/9/000075",
+      "measure_fields": [
+        "内径尺寸",
+        "轮毂间隙"
+      ]
     },
     {
       "part_number": "21090702806",
-      "part_name": "Z-Retaining Plate/9/110"
+      "part_name": "Z-Retaining Plate/9/110",
+      "measure_fields": [
+        "内径尺寸",
+        "轮毂间隙"
+      ]
     },
     {
       "part_number": "21090703006",
-      "part_name": "Z-Hub Plate/9/000015/110"
+      "part_name": "Z-Hub Plate/9/000015/110",
+      "measure_fields": [
+        "内径尺寸",
+        "轮毂间隙"
+      ]
     },
     {
       "part_number": "21091802500",
-      "part_name": "Z-Hub Plate/9/000015/110/Zinc"
+      "part_name": "Z-Hub Plate/9/000015/110/Zinc",
+      "measure_fields": [
+        "内径尺寸",
+        "轮毂间隙"
+      ]
     },
     {
       "part_number": "20060700503",
-      "part_name": "H-Hub Plate/6/312609"
+      "part_name": "H-Hub Plate/6/312609",
+      "measure_fields": [
+        "内径尺寸",
+        "轮毂间隙"
+      ]
     },
     {
       "part_number": "20060700603",
-      "part_name": "H-Hub Plate/6/312613"
+      "part_name": "H-Hub Plate/6/312613",
+      "measure_fields": [
+        "内径尺寸",
+        "轮毂间隙"
+      ]
     },
     {
       "part_number": "20060700903",
-      "part_name": "H-Hub Plate/6/413417"
+      "part_name": "H-Hub Plate/6/413417",
+      "measure_fields": [
+        "内径尺寸",
+        "轮毂间隙"
+      ]
     },
     {
       "part_number": "20060700703",
-      "part_name": "H-Hub Plate/6/413410"
+      "part_name": "H-Hub Plate/6/413410",
+      "measure_fields": [
+        "内径尺寸",
+        "轮毂间隙"
+      ]
     },
     {
       "part_number": "20060700803",
-      "part_name": "H-Hub Plate/6/413413"
+      "part_name": "H-Hub Plate/6/413413",
+      "measure_fields": [
+        "内径尺寸",
+        "轮毂间隙"
+      ]
     },
     {
       "part_number": "22120702411",
-      "part_name": "C-Retaining Plate/12"
+      "part_name": "C-Retaining Plate/12",
+      "measure_fields": [
+        "内径尺寸",
+        "轮毂间隙"
+      ]
     },
     {
       "part_number": "13200700012",
-      "part_name": "3CL/AL Fan Blade"
+      "part_name": "3CL/AL Fan Blade",
+      "measure_fields": [
+        "轮毂外径尺寸",
+        "扇叶重量"
+      ]
     },
     {
       "part_number": "24000704100",
-      "part_name": "Boss/388245/75"
+      "part_name": "Boss/388245/75",
+      "measure_fields": [
+        "内径尺寸",
+        "裙边厚度",
+        "裙边高度",
+        "轴套总长"
+      ]
     },
     {
       "part_number": "24000705100",
-      "part_name": "Boss/388254/75"
+      "part_name": "Boss/388254/75",
+      "measure_fields": [
+        "内径尺寸",
+        "裙边厚度",
+        "裙边高度",
+        "轴套总长"
+      ]
     },
     {
       "part_number": "16700700026",
-      "part_name": "6WL/AL Fan Blade"
+      "part_name": "6WL/AL Fan Blade",
+      "measure_fields": [
+        "轮毂外径尺寸",
+        "扇叶重量"
+      ]
     },
     {
       "part_number": "27030731206",
-      "part_name": "W-Retaining plate/3/385/LP"
+      "part_name": "W-Retaining plate/3/385/LP",
+      "measure_fields": [
+        "内径尺寸",
+        "轮毂间隙"
+      ]
     },
     {
       "part_number": "27030732011",
-      "part_name": "W-Retaining plate/3/385"
+      "part_name": "W-Retaining plate/3/385",
+      "measure_fields": [
+        "内径尺寸",
+        "轮毂间隙"
+      ]
     },
     {
       "part_number": "27070740011",
-      "part_name": "W-Retaining plate/7/312"
+      "part_name": "W-Retaining plate/7/312",
+      "measure_fields": [
+        "内径尺寸",
+        "轮毂间隙"
+      ]
     },
     {
       "part_number": "27070702511",
-      "part_name": "W-Retaining plate/7/40/312"
+      "part_name": "W-Retaining plate/7/40/312",
+      "measure_fields": [
+        "内径尺寸",
+        "轮毂间隙"
+      ]
     },
     {
       "part_number": "27990913928",
-      "part_name": "W-Pocket/HP"
+      "part_name": "W-Pocket/HP",
+      "measure_fields": []
     },
     {
       "part_number": "17170700078",
-      "part_name": "TR7ZL/AL Fan Blades"
+      "part_name": "TR7ZL/AL Fan Blades",
+      "measure_fields": [
+        "轮毂外径尺寸",
+        "扇叶重量"
+      ]
     },
     {
       "part_number": "12100700058",
-      "part_name": "2ZL/AL Fan blade"
+      "part_name": "2ZL/AL Fan blade",
+      "measure_fields": [
+        "轮毂外径尺寸",
+        "扇叶重量"
+      ]
     },
     {
       "part_number": "20100714106",
-      "part_name": "H-Hub Plate/10/Flange"
+      "part_name": "H-Hub Plate/10/Flange",
+      "measure_fields": [
+        "内径尺寸",
+        "轮毂间隙"
+      ]
     },
     {
       "part_number": "20100714006",
-      "part_name": "H-Retaining plate/10/Flange"
+      "part_name": "H-Retaining plate/10/Flange",
+      "measure_fields": [
+        "内径尺寸",
+        "轮毂间隙"
+      ]
     },
     {
       "part_number": "21060708106",
-      "part_name": "Z-Retaining plate/6/000075"
+      "part_name": "Z-Retaining plate/6/000075",
+      "measure_fields": [
+        "内径尺寸",
+        "轮毂间隙"
+      ]
     },
     {
       "part_number": "21080703006",
-      "part_name": "Z-Hub plate/8/000015/140"
+      "part_name": "Z-Hub plate/8/000015/140",
+      "measure_fields": [
+        "内径尺寸",
+        "轮毂间隙"
+      ]
     },
     {
       "part_number": "21080702806",
-      "part_name": "Z-Retaining plate/8/140"
+      "part_name": "Z-Retaining plate/8/140",
+      "measure_fields": [
+        "内径尺寸",
+        "轮毂间隙"
+      ]
     },
     {
       "part_number": "10930700570",
-      "part_name": "PMAX7R/Angle Block/5/Alu"
+      "part_name": "PMAX7R/Angle Block/5/Alu",
+      "measure_fields": []
     },
     {
       "part_number": "10930701072",
-      "part_name": "PMAX7R/Angle Block/10/Alu"
+      "part_name": "PMAX7R/Angle Block/10/Alu",
+      "measure_fields": []
     },
     {
       "part_number": "27030701203",
-      "part_name": "W-Retaining plate/3/LP"
+      "part_name": "W-Retaining plate/3/LP",
+      "measure_fields": [
+        "内径尺寸",
+        "轮毂间隙"
+      ]
     },
     {
       "part_number": "27000711506",
-      "part_name": "W-Boss/827227/90/P"
+      "part_name": "W-Boss/827227/90/P",
+      "measure_fields": [
+        "内径尺寸",
+        "裙边厚度",
+        "裙边高度",
+        "轴套总长"
+      ]
     },
     {
       "part_number": "27000711606",
-      "part_name": "W-Boss/827237/90/P"
+      "part_name": "W-Boss/827237/90/P",
+      "measure_fields": [
+        "内径尺寸",
+        "裙边厚度",
+        "裙边高度",
+        "轴套总长"
+      ]
     },
     {
       "part_number": "18200700039",
-      "part_name": "ReWake L/AL"
+      "part_name": "ReWake L/AL",
+      "measure_fields": [
+        "轮毂外径尺寸",
+        "扇叶重量"
+      ]
     },
     {
       "part_number": "18200700044",
-      "part_name": "ReWake L/AL/L=403"
+      "part_name": "ReWake L/AL/L=403",
+      "measure_fields": [
+        "轮毂外径尺寸",
+        "扇叶重量"
+      ]
     },
     {
       "part_number": "18230700038",
-      "part_name": "ReWake R/AL"
+      "part_name": "ReWake R/AL",
+      "measure_fields": [
+        "轮毂外径尺寸",
+        "扇叶重量"
+      ]
     },
     {
       "part_number": "18230700041",
-      "part_name": "ReWake R/AL/L=403"
+      "part_name": "ReWake R/AL/L=403",
+      "measure_fields": [
+        "轮毂外径尺寸",
+        "扇叶重量"
+      ]
     },
     {
       "part_number": "24000707400",
-      "part_name": "Boss/625113/32/75/Cone L=27"
+      "part_name": "Boss/625113/32/75/Cone L=27",
+      "measure_fields": [
+        "内径尺寸",
+        "裙边厚度",
+        "裙边高度",
+        "轴套总长"
+      ]
     },
     {
       "part_number": "21070702806",
-      "part_name": "Z-Retaining Plate/7/100"
+      "part_name": "Z-Retaining Plate/7/100",
+      "measure_fields": [
+        "内径尺寸",
+        "轮毂间隙"
+      ]
     },
     {
       "part_number": "21070703006",
-      "part_name": "Z-Hub Plate/7/000015/100"
+      "part_name": "Z-Hub Plate/7/000015/100",
+      "measure_fields": [
+        "内径尺寸",
+        "轮毂间隙"
+      ]
     },
     {
       "part_number": "20120708103",
-      "part_name": "H-Retaining Plate/12/000075"
+      "part_name": "H-Retaining Plate/12/000075",
+      "measure_fields": [
+        "内径尺寸",
+        "轮毂间隙"
+      ]
     },
     {
       "part_number": "15100700023",
-      "part_name": "5ZL/AL Fan blade"
+      "part_name": "5ZL/AL Fan blade",
+      "measure_fields": [
+        "轮毂外径尺寸",
+        "扇叶重量"
+      ]
     },
     {
       "part_number": "13100700091",
-      "part_name": "3ZL AL Fan blades"
+      "part_name": "3ZL AL Fan blades",
+      "measure_fields": [
+        "轮毂外径尺寸",
+        "扇叶重量"
+      ]
     },
     {
       "part_number": "24000706806",
-      "part_name": "Boss/525122/75"
+      "part_name": "Boss/525122/75",
+      "measure_fields": [
+        "内径尺寸",
+        "裙边厚度",
+        "裙边高度",
+        "轴套总长"
+      ]
     },
     {
       "part_number": "27000712211",
-      "part_name": "W-boss/1129053"
+      "part_name": "W-boss/1129053",
+      "measure_fields": [
+        "内径尺寸",
+        "裙边厚度",
+        "裙边高度",
+        "轴套总长"
+      ]
     },
     {
       "part_number": "24000706311",
-      "part_name": "Boss/627327/75"
+      "part_name": "Boss/627327/75",
+      "measure_fields": [
+        "内径尺寸",
+        "裙边厚度",
+        "裙边高度",
+        "轴套总长"
+      ]
     },
     {
       "part_number": "20060701032",
-      "part_name": ""
+      "part_name": "",
+      "measure_fields": []
     },
     {
       "part_number": "20080707903Z",
-      "part_name": ""
+      "part_name": "",
+      "measure_fields": []
     }
   ],
   "欧*": [
     {
       "part_number": "28030805500",
-      "part_name": "G-Retaining Plate/3"
+      "part_name": "G-Retaining Plate/3",
+      "measure_fields": [
+        "内径尺寸",
+        "轮毂间隙"
+      ]
     },
     {
       "part_number": "19770700086",
-      "part_name": "TR11W Fan Blades"
+      "part_name": "TR11W Fan Blades",
+      "measure_fields": [
+        "轮毂外径尺寸",
+        "扇叶重量"
+      ]
     },
     {
       "part_number": "16730700085",
-      "part_name": "6WR/AL Fan Blade"
+      "part_name": "6WR/AL Fan Blade",
+      "measure_fields": [
+        "轮毂外径尺寸",
+        "扇叶重量"
+      ]
     },
     {
       "part_number": "27110404606",
-      "part_name": "W-Retaining plate/11"
+      "part_name": "W-Retaining plate/11",
+      "measure_fields": [
+        "内径尺寸",
+        "轮毂间隙"
+      ]
     },
     {
       "part_number": "21060709211",
-      "part_name": "Z-Retaining Plate/6L"
+      "part_name": "Z-Retaining Plate/6L",
+      "measure_fields": [
+        "内径尺寸",
+        "轮毂间隙"
+      ]
     },
     {
       "part_number": "21060709311",
-      "part_name": "Z-Hub Plate/6L/000015"
+      "part_name": "Z-Hub Plate/6L/000015",
+      "measure_fields": [
+        "内径尺寸",
+        "轮毂间隙"
+      ]
     },
     {
       "part_number": "21060708111",
-      "part_name": "Z-Hub Plate/6L/000075"
+      "part_name": "Z-Hub Plate/6L/000075",
+      "measure_fields": [
+        "内径尺寸",
+        "轮毂间隙"
+      ]
     },
     {
       "part_number": "27080714106",
-      "part_name": "W-Hub plate/8/Flange"
+      "part_name": "W-Hub plate/8/Flange",
+      "measure_fields": [
+        "内径尺寸",
+        "轮毂间隙"
+      ]
     },
     {
       "part_number": "27080714006",
-      "part_name": "W-Retaining plate/8/Flange"
+      "part_name": "W-Retaining plate/8/Flange",
+      "measure_fields": [
+        "内径尺寸",
+        "轮毂间隙"
+      ]
     },
     {
       "part_number": "27100714106",
-      "part_name": "W-Hub plate/10/Flange"
+      "part_name": "W-Hub plate/10/Flange",
+      "measure_fields": [
+        "内径尺寸",
+        "轮毂间隙"
+      ]
     },
     {
       "part_number": "27100714006",
-      "part_name": "W-Retaining plate/10/Flange"
+      "part_name": "W-Retaining plate/10/Flange",
+      "measure_fields": [
+        "内径尺寸",
+        "轮毂间隙"
+      ]
     },
     {
       "part_number": "27100704606",
-      "part_name": "W-Retaining plate/10/P/90"
+      "part_name": "W-Retaining plate/10/P/90",
+      "measure_fields": [
+        "内径尺寸",
+        "轮毂间隙"
+      ]
     },
     {
       "part_number": "20080714106",
-      "part_name": "H-Hub plate/8/Flange"
+      "part_name": "H-Hub plate/8/Flange",
+      "measure_fields": [
+        "内径尺寸",
+        "轮毂间隙"
+      ]
     },
     {
       "part_number": "20080714006",
-      "part_name": "H-Retaining plate/8/Flange"
+      "part_name": "H-Retaining plate/8/Flange",
+      "measure_fields": [
+        "内径尺寸",
+        "轮毂间隙"
+      ]
     },
     {
       "part_number": "27090714106",
-      "part_name": "W-Hub plate/9/Flange"
+      "part_name": "W-Hub plate/9/Flange",
+      "measure_fields": [
+        "内径尺寸",
+        "轮毂间隙"
+      ]
     },
     {
       "part_number": "27090714006",
-      "part_name": "W-Retaining plate/9/Flange"
+      "part_name": "W-Retaining plate/9/Flange",
+      "measure_fields": [
+        "内径尺寸",
+        "轮毂间隙"
+      ]
     },
     {
       "part_number": "27090704606",
-      "part_name": "W-Retaining plate/9/P/90"
+      "part_name": "W-Retaining plate/9/P/90",
+      "measure_fields": [
+        "内径尺寸",
+        "轮毂间隙"
+      ]
     }
   ],
   "国外": [
     {
       "part_number": "20030700903",
-      "part_name": ""
+      "part_name": "",
+      "measure_fields": []
     },
     {
       "part_number": "20080700103",
-      "part_name": ""
+      "part_name": "",
+      "measure_fields": []
     },
     {
       "part_number": "20080701103",
-      "part_name": ""
+      "part_name": "",
+      "measure_fields": []
     },
     {
       "part_number": "20080702003",
-      "part_name": ""
+      "part_name": "",
+      "measure_fields": []
     },
     {
       "part_number": "20080707903",
-      "part_name": ""
+      "part_name": "",
+      "measure_fields": []
     },
     {
       "part_number": "20080709003",
-      "part_name": ""
+      "part_name": "",
+      "measure_fields": []
     },
     {
       "part_number": "20105070943",
-      "part_name": ""
+      "part_name": "",
+      "measure_fields": []
     },
     {
       "part_number": "20105078532",
-      "part_name": ""
+      "part_name": "",
+      "measure_fields": []
     },
     {
       "part_number": "20120700303",
-      "part_name": ""
+      "part_name": "",
+      "measure_fields": []
     },
     {
       "part_number": "21050704403",
-      "part_name": ""
+      "part_name": "",
+      "measure_fields": []
     },
     {
       "part_number": "21050708503",
-      "part_name": ""
+      "part_name": "",
+      "measure_fields": []
     },
     {
       "part_number": "21050708505",
-      "part_name": ""
+      "part_name": "",
+      "measure_fields": []
     },
     {
       "part_number": "21050709403",
-      "part_name": ""
+      "part_name": "",
+      "measure_fields": []
     },
     {
       "part_number": "21060702506",
-      "part_name": ""
+      "part_name": "",
+      "measure_fields": []
     },
     {
       "part_number": "21120702503",
-      "part_name": ""
+      "part_name": "",
+      "measure_fields": []
     },
     {
       "part_number": "21120706503",
-      "part_name": ""
+      "part_name": "",
+      "measure_fields": []
     },
     {
       "part_number": "21125702503",
-      "part_name": ""
+      "part_name": "",
+      "measure_fields": []
     },
     {
       "part_number": "21160702403",
-      "part_name": ""
+      "part_name": "",
+      "measure_fields": []
     },
     {
       "part_number": "21160711903",
-      "part_name": ""
+      "part_name": "",
+      "measure_fields": []
     },
     {
       "part_number": "21160712103",
-      "part_name": ""
+      "part_name": "",
+      "measure_fields": []
     },
     {
       "part_number": "24000706600",
-      "part_name": ""
+      "part_name": "",
+      "measure_fields": []
     },
     {
       "part_number": "24007078012",
-      "part_name": ""
+      "part_name": "",
+      "measure_fields": []
     },
     {
       "part_number": "27000701606",
-      "part_name": ""
+      "part_name": "",
+      "measure_fields": []
     },
     {
       "part_number": "27050714106",
-      "part_name": ""
+      "part_name": "",
+      "measure_fields": []
     },
     {
       "part_number": "27060714106",
-      "part_name": ""
+      "part_name": "",
+      "measure_fields": []
     },
     {
       "part_number": "27100804606",
-      "part_name": ""
+      "part_name": "",
+      "measure_fields": []
     },
     {
       "part_number": "27130804800",
-      "part_name": ""
+      "part_name": "",
+      "measure_fields": []
     },
     {
       "part_number": "27130804900",
-      "part_name": ""
+      "part_name": "",
+      "measure_fields": []
     },
     {
       "part_number": "20080702003Z",
-      "part_name": ""
+      "part_name": "",
+      "measure_fields": []
     },
     {
       "part_number": "20080709003Z",
-      "part_name": ""
+      "part_name": "",
+      "measure_fields": []
     }
   ],
   "MWT": [
     {
       "part_number": "24000702900",
-      "part_name": ""
+      "part_name": "",
+      "measure_fields": []
     }
   ],
   "嘉欧/金*": [
     {
       "part_number": "24000707400R",
-      "part_name": ""
+      "part_name": "",
+      "measure_fields": []
     },
     {
       "part_number": "24000707400Z",
-      "part_name": ""
+      "part_name": "",
+      "measure_fields": []
     }
   ]
 }
