@@ -27,15 +27,15 @@ st.markdown("""
     text-align: center; padding: 8px 4px; border: 1px solid #D0D0D0;
     font-size: 13px; background-color: #F8FBFF; min-height: 38px; line-height: 1.4;
 }
-.action-normal { color: #BF8F00; font-weight: bold; }
+.action-normal { color: #C0392B; font-weight: bold; }
 .action-skip   { color: #1E8449; font-weight: bold; }
-.action-skip-inspect { color: #2E74B5; font-weight: bold; }
+.action-skip-inspect { color: #1E8449; font-weight: bold; }
 div[data-testid="stHorizontalBlock"] { gap: 0.4rem; }
 </style>
 """, unsafe_allow_html=True)
 
 COLUMNS = ["到货日期","供应商","零件料号","零件名称","生产日期","累计批次数",
-           "执行动作","开始时间","结束时间","检验用时(分钟)","结果","检验员","记录时间"]
+           "执行动作","开始时间","结束时间","检验用时(分钟)","结果","不良备注","检验员","记录时间"]
 INSPECTORS = ["杨明","田志高","其他"]
 RESULTS = ["OK","NG"]
 CONSECUTIVE_PASS_TO_START = 3
@@ -84,6 +84,12 @@ def load_history(ws):
 def append_record(ws, row_dict):
     ws.append_row([str(row_dict.get(c,"")) for c in COLUMNS])
 
+def overwrite_all(ws, df):
+    """用df完整覆盖整个工作表（含表头）。用于修改/删除后回写。"""
+    ws.clear()
+    data = [COLUMNS] + df[COLUMNS].astype(str).values.tolist()
+    ws.update(data, value_input_option="USER_ENTERED")
+
 def compute_action_and_cumulative(history_df, supplier, part_number, production_date):
     if history_df.empty:
         return 1, "正常检验"
@@ -114,6 +120,71 @@ def compute_action_and_cumulative(history_df, supplier, part_number, production_
     else:
         action = "跳批（不检验尺寸）" if sk < SKIP_PATTERN_SKIP else "跳批检验（全项目）"
     return cumulative, action
+
+
+def recalculate_all(df):
+    """
+    对整个历史记录重新计算"累计批次数"和"执行动作"。
+    按 (供应商, 料号, 生产日期) 分组，组内按记录时间（或原顺序）排序后
+    用跳批状态机重新推导每一批的累计批次和动作。
+    用于删除记录后修复后续批次的累计逻辑。
+    """
+    if df.empty:
+        return df
+    df = df.copy().reset_index(drop=True)
+    # 保持原始顺序作为序列顺序（记录时间升序更准，若无则按现有顺序）
+    if "记录时间" in df.columns and df["记录时间"].astype(str).str.strip().ne("").any():
+        df["_ord"] = pd.to_datetime(df["记录时间"], errors="coerce")
+        df = df.sort_values("_ord", kind="stable").reset_index(drop=True)
+
+    new_cum = [0] * len(df)
+    new_act = [""] * len(df)
+
+    # 分组key
+    keys = list(zip(df["供应商"].astype(str), df["零件料号"].astype(str), df["生产日期"].astype(str)))
+    # 每个组维护一个状态
+    group_state = {}  # key -> dict(state, cp, sk, count)
+
+    for i in range(len(df)):
+        k = keys[i]
+        if k not in group_state:
+            group_state[k] = {"state": "正常检验", "cp": 0, "sk": 0, "count": 0}
+        gs = group_state[k]
+
+        # 当前这批的累计批次 = 组内已出现数 + 1
+        gs["count"] += 1
+        new_cum[i] = gs["count"]
+
+        # 决定当前批动作（基于进入这批之前的状态）
+        if gs["state"] == "正常检验":
+            new_act[i] = "正常检验"
+        else:
+            new_act[i] = "跳批（不检验尺寸）" if gs["sk"] < SKIP_PATTERN_SKIP else "跳批检验（全项目）"
+
+        # 根据本批结果推进状态（供下一批用）
+        is_pass = str(df.iloc[i].get("结果", "")).strip().upper() == "OK"
+        if gs["state"] == "正常检验":
+            if is_pass:
+                gs["cp"] += 1
+                if gs["cp"] >= CONSECUTIVE_PASS_TO_START:
+                    gs["state"] = "跳批"
+                    gs["sk"] = 0
+            else:
+                gs["cp"] = 0
+        else:
+            if is_pass:
+                gs["sk"] = (gs["sk"] + 1) % (SKIP_PATTERN_SKIP + SKIP_PATTERN_INSPECT)
+            else:
+                gs["state"] = "正常检验"
+                gs["cp"] = 0
+                gs["sk"] = 0
+
+    df["累计批次数"] = new_cum
+    df["执行动作"] = new_act
+    if "_ord" in df.columns:
+        df = df.drop(columns=["_ord"])
+    return df
+
 
 def get_production_dates(history_df, supplier, part_number):
     if history_df.empty:
@@ -174,7 +245,6 @@ def make_excel(df):
 
 # ---------- 界面 ----------
 st.title("📋 来料检验记录系统")
-st.caption("IQC Incoming Inspection Record · 跳批检验逻辑 · 数据存储于 Google Sheets")
 
 try:
     ws = get_gsheet()
@@ -234,6 +304,17 @@ with tab1:
         else:
             inspector = inspector_sel
 
+    # NG 时弹出不良内容备注框
+    if result == "NG":
+        defect_note = st.text_area(
+            "⚠️ 不良内容（NG必填）",
+            value="",
+            placeholder="请填写不良现象、缺陷位置、数量等，例如：表面划伤2处 / 装配孔位偏移0.5mm / 镀层局部脱落",
+            height=80,
+        )
+    else:
+        defect_note = ""
+
     cumulative, action = compute_action_and_cumulative(history_df, supplier, part_number, production_date)
     today = date.today()
     dt_start = datetime.combine(today, start_time)
@@ -286,12 +367,14 @@ with tab1:
             st.error("请选择有效料号。")
         elif inspector_sel=="其他" and not inspector.strip():
             st.error("请填写检验员姓名。")
+        elif result == "NG" and not defect_note.strip():
+            st.error("结果为 NG，请填写不良内容后再保存。")
         else:
             row = {"到货日期":str(arrival_date),"供应商":supplier,"零件料号":part_number,
                    "零件名称":part_name,"生产日期":str(production_date),"累计批次数":cumulative,
                    "执行动作":action,"开始时间":start_time.strftime("%H:%M"),
                    "结束时间":end_time.strftime("%H:%M"),"检验用时(分钟)":f"{diff_min:.0f}",
-                   "结果":result,"检验员":inspector,
+                   "结果":result,"不良备注":defect_note.strip(),"检验员":inspector,
                    "记录时间":datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
             try:
                 append_record(ws, row)
@@ -306,6 +389,7 @@ with tab2:
     if history_df.empty:
         st.info("暂无历史记录。")
     else:
+        # ---------- 筛选 ----------
         colF1, colF2, colF3 = st.columns(3)
         with colF1:
             f_supplier = st.multiselect("按供应商筛选", SUPPLIERS)
@@ -314,15 +398,109 @@ with tab2:
             f_part = st.multiselect("按料号筛选", all_parts)
         with colF3:
             f_result = st.multiselect("按结果筛选", RESULTS)
-        view = history_df.copy()
+
+        view = history_df.copy().reset_index(drop=True)
+        # 记录原始行号，便于删除时定位
+        view["_行号"] = view.index
         if f_supplier: view = view[view["供应商"].isin(f_supplier)]
         if f_part: view = view[view["零件料号"].astype(str).isin(f_part)]
         if f_result: view = view[view["结果"].isin(f_result)]
+
         show_cols = ["到货日期","供应商","零件料号","生产日期","累计批次数",
-                     "执行动作","开始时间","结束时间","检验用时(分钟)","结果","检验员"]
+                     "执行动作","开始时间","结束时间","检验用时(分钟)","结果","不良备注","检验员"]
         show_cols = [c for c in show_cols if c in view.columns]
-        st.dataframe(view[show_cols], use_container_width=True, height=400)
+
+        st.markdown("##### 📝 编辑 / 删除记录")
+
+        view_mode = st.radio(
+            "显示模式",
+            ["编辑模式（可改可删）", "彩色查看模式（只读）"],
+            horizontal=True,
+            label_visibility="collapsed",
+        )
+
+        if view_mode == "彩色查看模式（只读）":
+            # 用Styler给"执行动作"列上色：正常检验红、跳批绿
+            def color_action(val):
+                s = str(val)
+                if "正常检验" in s:
+                    return "color: #C0392B; font-weight: bold;"
+                elif "跳批" in s:
+                    return "color: #1E8449; font-weight: bold;"
+                return ""
+            styled = view[show_cols].style.map(color_action, subset=["执行动作"])
+            st.dataframe(styled, use_container_width=True, height=420)
+        else:
+            st.caption("双击单元格可直接修改内容；勾选「删除」列后点下方按钮删除。修改和删除后需点「保存修改到 Google Sheets」生效。")
+
+            # 全选删除
+            select_all = st.checkbox("全选（勾选后将删除全部当前显示的记录）")
+
+            # 构造编辑表：加一个"删除"勾选列
+            editor_df = view[show_cols].copy()
+            editor_df.insert(0, "删除", select_all)
+
+            edited = st.data_editor(
+                editor_df,
+                use_container_width=True,
+                height=420,
+                num_rows="fixed",
+                key="hist_editor",
+                column_config={
+                    "删除": st.column_config.CheckboxColumn("删除", help="勾选要删除的行", width="small"),
+                    "结果": st.column_config.SelectboxColumn("结果", options=RESULTS, width="small"),
+                    "不良备注": st.column_config.TextColumn("不良备注", width="medium"),
+                    "检验员": st.column_config.TextColumn("检验员"),
+                },
+                disabled=["累计批次数", "执行动作"],  # 这两列由系统计算，不允许手改
+            )
+
+            st.divider()
+
+            # ---------- 操作按钮 ----------
+            btn1, btn2 = st.columns(2)
+
+            with btn1:
+                if st.button("💾 保存修改到 Google Sheets", type="primary", use_container_width=True):
+                    try:
+                        new_hist = history_df.copy().reset_index(drop=True)
+                        view_rows = view["_行号"].tolist()
+                        # 只回写用户可编辑的列，不回写累计批次/执行动作（它们会被重算）
+                        editable_cols = [c for c in show_cols if c not in ("累计批次数", "执行动作")]
+                        for i, orig_idx in enumerate(view_rows):
+                            for c in editable_cols:
+                                new_hist.at[orig_idx, c] = edited.iloc[i][c]
+                        # 重算累计批次和执行动作（结果可能被改过，影响跳批序列）
+                        new_hist = recalculate_all(new_hist)
+                        overwrite_all(ws, new_hist)
+                        st.success("✅ 修改已保存，并已重算累计批次！")
+                        st.cache_data.clear()
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"保存修改失败：{e}")
+
+            with btn2:
+                if st.button("🗑️ 删除勾选的记录", use_container_width=True):
+                    try:
+                        to_delete = [view["_行号"].tolist()[i]
+                                     for i in range(len(edited)) if edited.iloc[i]["删除"]]
+                        if not to_delete:
+                            st.warning("未勾选任何记录。")
+                        else:
+                            new_hist = history_df.copy().reset_index(drop=True)
+                            new_hist = new_hist.drop(index=to_delete).reset_index(drop=True)
+                            # 删除后自动重算累计批次和执行动作
+                            new_hist = recalculate_all(new_hist)
+                            overwrite_all(ws, new_hist)
+                            st.success(f"✅ 已删除 {len(to_delete)} 条记录，并已重算累计批次！")
+                            st.cache_data.clear()
+                            st.rerun()
+                    except Exception as e:
+                        st.error(f"删除失败：{e}")
+
         st.divider()
+
+        # ---------- 统计 ----------
         c1, c2, c3, c4 = st.columns(4)
         c1.metric("总记录数", len(view))
         if "执行动作" in view.columns and len(view):
@@ -336,14 +514,16 @@ with tab2:
                 c4.metric("累计检验用时(小时)", f"{total_min/60:.1f}")
             except Exception:
                 pass
+
+        # ---------- 导出 ----------
         exp1, exp2 = st.columns(2)
         with exp1:
-            csv = view.to_csv(index=False).encode("utf-8-sig")
+            csv = view[show_cols].to_csv(index=False).encode("utf-8-sig")
             st.download_button("📥 导出 CSV", csv, "inspection_records.csv",
                                "text/csv", use_container_width=True)
         with exp2:
             try:
-                xlsx_bytes = make_excel(view[show_cols] if show_cols else view)
+                xlsx_bytes = make_excel(view[show_cols])
                 ts = datetime.now().strftime("%Y%m%d_%H%M")
                 st.download_button(
                     "📊 导出 Excel",
