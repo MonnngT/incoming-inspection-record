@@ -57,13 +57,29 @@ def get_gsheet():
     client = gspread.authorize(creds)
     sh = client.open_by_key(st.secrets["sheet"]["key"])
     ws = sh.sheet1
-    if not ws.get_all_values():
+    values = ws.get_all_values()
+    if not values:
+        # 空表，写入表头
         ws.append_row(COLUMNS)
+    elif values[0] != COLUMNS:
+        # 第一行不是正确表头：在最前面插入一行正确表头
+        # （原来误填的内容会被当作数据保留在下面）
+        ws.insert_row(COLUMNS, 1)
     return ws
 
 def load_history(ws):
-    records = ws.get_all_records()
-    return pd.DataFrame(records) if records else pd.DataFrame(columns=COLUMNS)
+    """按位置读取，不依赖get_all_records对表头的自动识别，避免重复表头报错"""
+    values = ws.get_all_values()
+    if not values or len(values) < 2:
+        return pd.DataFrame(columns=COLUMNS)
+    header = values[0]
+    rows = values[1:]
+    df = pd.DataFrame(rows, columns=header)
+    # 只保留我们关心的列，缺失的补空
+    for c in COLUMNS:
+        if c not in df.columns:
+            df[c] = ""
+    return df[COLUMNS]
 
 def append_record(ws, row_dict):
     ws.append_row([str(row_dict.get(c,"")) for c in COLUMNS])
