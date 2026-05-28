@@ -280,15 +280,7 @@ with tab1:
         else:
             st.warning("该供应商暂无料号"); part_number=""; part_name=""
     with c4:
-        hist_prod_dates = get_production_dates(history_df, supplier, part_number)
-        if hist_prod_dates:
-            mode = st.radio("生产日期来源", ["新日期","历史"], horizontal=True, label_visibility="collapsed")
-        else:
-            mode = "新日期"
-        if mode=="历史" and hist_prod_dates:
-            production_date = st.selectbox("生产日期", hist_prod_dates)
-        else:
-            production_date = str(st.date_input("生产日期", value=date.today(), key="prod_cal"))
+        production_date = str(st.date_input("生产日期", value=date.today(), key="prod_cal"))
 
     c5, c6, c7, c8 = st.columns(4)
     with c5:
@@ -411,92 +403,69 @@ with tab2:
         show_cols = [c for c in show_cols if c in view.columns]
 
         st.markdown("##### 📝 编辑 / 删除记录")
+        st.caption("双击单元格可直接修改内容；勾选「删除」列后点下方按钮删除。修改和删除后需点「保存修改到 Google Sheets」生效。")
 
-        view_mode = st.radio(
-            "显示模式",
-            ["编辑模式（可改可删）", "彩色查看模式（只读）"],
-            horizontal=True,
-            label_visibility="collapsed",
+        # 全选删除
+        select_all = st.checkbox("全选（勾选后将删除全部当前显示的记录）")
+
+        # 构造编辑表：加一个"删除"勾选列
+        editor_df = view[show_cols].copy()
+        editor_df.insert(0, "删除", select_all)
+
+        edited = st.data_editor(
+            editor_df,
+            use_container_width=True,
+            height=420,
+            num_rows="fixed",
+            key="hist_editor",
+            column_config={
+                "删除": st.column_config.CheckboxColumn("删除", help="勾选要删除的行", width="small"),
+                "结果": st.column_config.SelectboxColumn("结果", options=RESULTS, width="small"),
+                "不良备注": st.column_config.TextColumn("不良备注", width="medium"),
+                "检验员": st.column_config.TextColumn("检验员"),
+            },
+            disabled=["累计批次数", "执行动作"],  # 这两列由系统计算，不允许手改
         )
 
-        if view_mode == "彩色查看模式（只读）":
-            # 用Styler给"执行动作"列上色：正常检验红、跳批绿
-            def color_action(val):
-                s = str(val)
-                if "正常检验" in s:
-                    return "color: #C0392B; font-weight: bold;"
-                elif "跳批" in s:
-                    return "color: #1E8449; font-weight: bold;"
-                return ""
-            styled = view[show_cols].style.map(color_action, subset=["执行动作"])
-            st.dataframe(styled, use_container_width=True, height=420)
-        else:
-            st.caption("双击单元格可直接修改内容；勾选「删除」列后点下方按钮删除。修改和删除后需点「保存修改到 Google Sheets」生效。")
+        st.divider()
 
-            # 全选删除
-            select_all = st.checkbox("全选（勾选后将删除全部当前显示的记录）")
+        # ---------- 操作按钮 ----------
+        btn1, btn2 = st.columns(2)
 
-            # 构造编辑表：加一个"删除"勾选列
-            editor_df = view[show_cols].copy()
-            editor_df.insert(0, "删除", select_all)
+        with btn1:
+            if st.button("💾 保存修改到 Google Sheets", type="primary", use_container_width=True):
+                try:
+                    new_hist = history_df.copy().reset_index(drop=True)
+                    view_rows = view["_行号"].tolist()
+                    editable_cols = [c for c in show_cols if c not in ("累计批次数", "执行动作")]
+                    for i, orig_idx in enumerate(view_rows):
+                        for c in editable_cols:
+                            new_hist.at[orig_idx, c] = edited.iloc[i][c]
+                    new_hist = recalculate_all(new_hist)
+                    overwrite_all(ws, new_hist)
+                    st.success("✅ 修改已保存，并已重算累计批次！")
+                    st.cache_data.clear()
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"保存修改失败：{e}")
 
-            edited = st.data_editor(
-                editor_df,
-                use_container_width=True,
-                height=420,
-                num_rows="fixed",
-                key="hist_editor",
-                column_config={
-                    "删除": st.column_config.CheckboxColumn("删除", help="勾选要删除的行", width="small"),
-                    "结果": st.column_config.SelectboxColumn("结果", options=RESULTS, width="small"),
-                    "不良备注": st.column_config.TextColumn("不良备注", width="medium"),
-                    "检验员": st.column_config.TextColumn("检验员"),
-                },
-                disabled=["累计批次数", "执行动作"],  # 这两列由系统计算，不允许手改
-            )
-
-            st.divider()
-
-            # ---------- 操作按钮 ----------
-            btn1, btn2 = st.columns(2)
-
-            with btn1:
-                if st.button("💾 保存修改到 Google Sheets", type="primary", use_container_width=True):
-                    try:
+        with btn2:
+            if st.button("🗑️ 删除勾选的记录", use_container_width=True):
+                try:
+                    to_delete = [view["_行号"].tolist()[i]
+                                 for i in range(len(edited)) if edited.iloc[i]["删除"]]
+                    if not to_delete:
+                        st.warning("未勾选任何记录。")
+                    else:
                         new_hist = history_df.copy().reset_index(drop=True)
-                        view_rows = view["_行号"].tolist()
-                        # 只回写用户可编辑的列，不回写累计批次/执行动作（它们会被重算）
-                        editable_cols = [c for c in show_cols if c not in ("累计批次数", "执行动作")]
-                        for i, orig_idx in enumerate(view_rows):
-                            for c in editable_cols:
-                                new_hist.at[orig_idx, c] = edited.iloc[i][c]
-                        # 重算累计批次和执行动作（结果可能被改过，影响跳批序列）
+                        new_hist = new_hist.drop(index=to_delete).reset_index(drop=True)
                         new_hist = recalculate_all(new_hist)
                         overwrite_all(ws, new_hist)
-                        st.success("✅ 修改已保存，并已重算累计批次！")
+                        st.success(f"✅ 已删除 {len(to_delete)} 条记录，并已重算累计批次！")
                         st.cache_data.clear()
                         st.rerun()
-                    except Exception as e:
-                        st.error(f"保存修改失败：{e}")
-
-            with btn2:
-                if st.button("🗑️ 删除勾选的记录", use_container_width=True):
-                    try:
-                        to_delete = [view["_行号"].tolist()[i]
-                                     for i in range(len(edited)) if edited.iloc[i]["删除"]]
-                        if not to_delete:
-                            st.warning("未勾选任何记录。")
-                        else:
-                            new_hist = history_df.copy().reset_index(drop=True)
-                            new_hist = new_hist.drop(index=to_delete).reset_index(drop=True)
-                            # 删除后自动重算累计批次和执行动作
-                            new_hist = recalculate_all(new_hist)
-                            overwrite_all(ws, new_hist)
-                            st.success(f"✅ 已删除 {len(to_delete)} 条记录，并已重算累计批次！")
-                            st.cache_data.clear()
-                            st.rerun()
-                    except Exception as e:
-                        st.error(f"删除失败：{e}")
+                except Exception as e:
+                    st.error(f"删除失败：{e}")
 
         st.divider()
 
