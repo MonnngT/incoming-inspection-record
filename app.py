@@ -34,10 +34,17 @@ div[data-testid="stHorizontalBlock"] { gap: 0.4rem; }
 </style>
 """, unsafe_allow_html=True)
 
-COLUMNS = ["到货日期","供应商","零件料号","零件名称","生产日期","累计批次数",
-           "执行动作","开始时间","结束时间","检验用时(分钟)","结果","不良备注","检验员","记录时间"]
+# 8个可能的测量字段（按料号动态显示，存表时固定为列）
+MEASURE_COLS = ["仿形间隙测量数据","轮毂外径尺寸","内径尺寸","裙边厚度",
+                "裙边高度","轴套总长","轮毂间隙","扇叶重量"]
+
+COLUMNS = ["到货日期","订单号","供应商","零件料号","零件名称","生产日期",
+           "来料总数量","检验数量","累计批次数","执行动作",
+           "开始时间","结束时间","检验用时(分钟)","结果","不良备注"] \
+          + MEASURE_COLS + ["检验员","记录时间"]
 INSPECTORS = ["杨明","田志高","其他"]
 RESULTS = ["OK","NG"]
+PO_PREFIXES = ["ST-PO", "SZ-PO"]
 CONSECUTIVE_PASS_TO_START = 3
 SKIP_PATTERN_SKIP = 2
 SKIP_PATTERN_INSPECT = 1
@@ -260,12 +267,21 @@ tab1, tab2 = st.tabs(["✍️ 新增检验记录", "📜 历史记录"])
 
 with tab1:
     st.markdown("##### 录入数据")
+
+    # 第一排：到货日期、订单号、供应商、零件料号
     c1, c2, c3, c4 = st.columns(4)
     with c1:
         arrival_date = st.date_input("到货日期", value=date.today())
     with c2:
-        supplier = st.selectbox("供应商", SUPPLIERS, index=0)
+        pc1, pc2 = st.columns([1, 1.4])
+        with pc1:
+            po_prefix = st.selectbox("订单前缀", PO_PREFIXES, label_visibility="visible")
+        with pc2:
+            po_number = st.text_input("订单号(数字)", "", placeholder="如 12345")
+        order_no = f"{po_prefix}-{po_number.strip()}" if po_number.strip() else ""
     with c3:
+        supplier = st.selectbox("供应商", SUPPLIERS, index=0)
+    with c4:
         parts_list = PARTS_DATA.get(supplier, [])
         part_options, part_display_map = [], {}
         for p in parts_list:
@@ -277,24 +293,44 @@ with tab1:
             selected_part = part_display_map[part_disp]
             part_number = selected_part["part_number"]
             part_name = selected_part.get("part_name","")
+            measure_fields = selected_part.get("measure_fields", [])
         else:
-            st.warning("该供应商暂无料号"); part_number=""; part_name=""
-    with c4:
-        production_date = str(st.date_input("生产日期", value=date.today(), key="prod_cal"))
+            st.warning("该供应商暂无料号"); part_number=""; part_name=""; measure_fields=[]
 
+    # 第二排：生产日期、来料总数量、检验数量、检验员
     c5, c6, c7, c8 = st.columns(4)
     with c5:
-        start_time = st.time_input("开始时间", value=datetime.now().time())
+        production_date = str(st.date_input("生产日期", value=date.today(), key="prod_cal"))
     with c6:
-        end_time = st.time_input("结束时间", value=datetime.now().time())
+        total_qty = st.number_input("来料总数量", min_value=0, value=0, step=1)
     with c7:
-        result = st.selectbox("结果", RESULTS)
+        inspect_qty = st.number_input("检验数量", min_value=0, value=0, step=1)
     with c8:
         inspector_sel = st.selectbox("检验员", INSPECTORS)
         if inspector_sel=="其他":
             inspector = st.text_input("输入姓名", "", label_visibility="collapsed", placeholder="请输入检验员姓名")
         else:
             inspector = inspector_sel
+
+    # 第三排：开始时间、结束时间、结果
+    c9, c10, c11, c12 = st.columns(4)
+    with c9:
+        start_time = st.time_input("开始时间", value=datetime.now().time())
+    with c10:
+        end_time = st.time_input("结束时间", value=datetime.now().time())
+    with c11:
+        result = st.selectbox("结果", RESULTS)
+    with c12:
+        st.empty()
+
+    # 动态测量字段（根据料号显示）
+    measure_values = {}
+    if measure_fields:
+        st.markdown("##### 📐 测量数据（根据所选料号显示）")
+        mcols = st.columns(min(len(measure_fields), 4))
+        for idx, field in enumerate(measure_fields):
+            with mcols[idx % len(mcols)]:
+                measure_values[field] = st.text_input(field, "", placeholder="填入数值，如 12.5")
 
     # NG 时弹出不良内容备注框
     if result == "NG":
@@ -324,11 +360,11 @@ with tab1:
     st.divider()
     st.markdown("##### 当前记录预览")
 
-    header_cols = ["到货日期","供应商","零件料号","生产日期","累计批次数",
-                   "执行动作","开始时间","结束时间","检验用时(分钟)","结果","检验员"]
-    header_en = ["Arrival Date","Supplier","Part number","Production Date",
-                 "Cumulative Lots","Action","Start","End","Time(min)","Result","Inspector"]
-    weights = [1.1,0.9,1.5,1.1,0.8,1.4,0.7,0.7,0.9,0.7,0.9]
+    header_cols = ["到货日期","订单号","供应商","零件料号","生产日期","来料总数量","检验数量",
+                   "累计批次数","执行动作","开始时间","结束时间","检验用时(分钟)","结果","检验员"]
+    header_en = ["Arrival","Order No.","Supplier","Part number","Prod. Date","Total Qty","Insp. Qty",
+                 "Cum. Lots","Action","Start","End","Time(min)","Result","Inspector"]
+    weights = [0.95,1.1,0.85,1.4,0.95,0.8,0.8,0.75,1.3,0.65,0.65,0.85,0.6,0.85]
 
     hcols = st.columns(weights)
     for i, hc in enumerate(hcols):
@@ -337,7 +373,8 @@ with tab1:
                     unsafe_allow_html=True)
 
     pn_disp = part_number if part_number else "—"
-    values = [str(arrival_date), supplier, pn_disp, str(production_date), str(cumulative),
+    values = [str(arrival_date), order_no if order_no else "—", supplier, pn_disp, str(production_date),
+              str(int(total_qty)), str(int(inspect_qty)), str(cumulative),
               action_html, start_time.strftime("%H:%M"), end_time.strftime("%H:%M"),
               f"{diff_min:.0f}", result, inspector if inspector else "—"]
     dcols = st.columns(weights)
@@ -357,17 +394,23 @@ with tab1:
             st.error("Google Sheets 未连接，无法保存。")
         elif not part_number:
             st.error("请选择有效料号。")
+        elif not po_number.strip():
+            st.error("请填写订单号。")
         elif inspector_sel=="其他" and not inspector.strip():
             st.error("请填写检验员姓名。")
         elif result == "NG" and not defect_note.strip():
             st.error("结果为 NG，请填写不良内容后再保存。")
         else:
-            row = {"到货日期":str(arrival_date),"供应商":supplier,"零件料号":part_number,
-                   "零件名称":part_name,"生产日期":str(production_date),"累计批次数":cumulative,
-                   "执行动作":action,"开始时间":start_time.strftime("%H:%M"),
-                   "结束时间":end_time.strftime("%H:%M"),"检验用时(分钟)":f"{diff_min:.0f}",
-                   "结果":result,"不良备注":defect_note.strip(),"检验员":inspector,
-                   "记录时间":datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+            row = {"到货日期":str(arrival_date),"订单号":order_no,"供应商":supplier,
+                   "零件料号":part_number,"零件名称":part_name,"生产日期":str(production_date),
+                   "来料总数量":int(total_qty),"检验数量":int(inspect_qty),
+                   "累计批次数":cumulative,"执行动作":action,
+                   "开始时间":start_time.strftime("%H:%M"),"结束时间":end_time.strftime("%H:%M"),
+                   "检验用时(分钟)":f"{diff_min:.0f}","结果":result,"不良备注":defect_note.strip(),
+                   "检验员":inspector,"记录时间":datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+            # 测量字段（未显示的留空）
+            for mf in MEASURE_COLS:
+                row[mf] = measure_values.get(mf, "")
             try:
                 append_record(ws, row)
                 st.success("✅ 记录已保存！")
@@ -398,8 +441,9 @@ with tab2:
         if f_part: view = view[view["零件料号"].astype(str).isin(f_part)]
         if f_result: view = view[view["结果"].isin(f_result)]
 
-        show_cols = ["到货日期","供应商","零件料号","生产日期","累计批次数",
-                     "执行动作","开始时间","结束时间","检验用时(分钟)","结果","不良备注","检验员"]
+        show_cols = ["到货日期","订单号","供应商","零件料号","生产日期","来料总数量","检验数量",
+                     "累计批次数","执行动作","开始时间","结束时间","检验用时(分钟)","结果","不良备注"] \
+                    + MEASURE_COLS + ["检验员"]
         show_cols = [c for c in show_cols if c in view.columns]
 
         st.markdown("##### 📝 编辑 / 删除记录")
