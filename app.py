@@ -7,6 +7,7 @@ IQC Incoming Inspection Record System with Skip-Lot Logic
 import streamlit as st
 import pandas as pd
 import json
+import io
 from datetime import datetime, date
 import gspread
 from google.oauth2.service_account import Credentials
@@ -105,6 +106,55 @@ def get_production_dates(history_df, supplier, part_number):
             (history_df["零件料号"].astype(str)==str(part_number)))
     dates = history_df[mask]["生产日期"].astype(str).unique().tolist()
     return sorted([d for d in dates if d and d!="nan"], reverse=True)
+
+
+def make_excel(df):
+    """把DataFrame导出为带格式的Excel（深蓝表头，接近Excel原表样式）"""
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+    from openpyxl.utils import get_column_letter
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "来料检验记录"
+
+    header_fill = PatternFill("solid", start_color="1F4E79")
+    header_font = Font(name="微软雅黑", size=10, bold=True, color="FFFFFF")
+    cell_font = Font(name="微软雅黑", size=10)
+    thin = Side(border_style="thin", color="BBBBBB")
+    border = Border(top=thin, bottom=thin, left=thin, right=thin)
+    center = Alignment(horizontal="center", vertical="center", wrap_text=True)
+
+    cols = list(df.columns)
+    # 表头
+    for ci, col in enumerate(cols, 1):
+        c = ws.cell(row=1, column=ci, value=col)
+        c.fill = header_fill
+        c.font = header_font
+        c.alignment = center
+        c.border = border
+    ws.row_dimensions[1].height = 26
+
+    # 数据
+    for ri, (_, row) in enumerate(df.iterrows(), 2):
+        for ci, col in enumerate(cols, 1):
+            c = ws.cell(row=ri, column=ci, value=str(row[col]))
+            c.font = cell_font
+            c.alignment = center
+            c.border = border
+
+    # 列宽自适应
+    for ci, col in enumerate(cols, 1):
+        max_len = max([len(str(col))] + [len(str(v)) for v in df[col].astype(str)])
+        ws.column_dimensions[get_column_letter(ci)].width = min(max(max_len * 1.6, 10), 40)
+
+    # 冻结表头
+    ws.freeze_panes = "A2"
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    return buf.getvalue()
 
 # ---------- 界面 ----------
 st.title("📋 来料检验记录系统")
@@ -270,5 +320,21 @@ with tab2:
                 c4.metric("累计检验用时(小时)", f"{total_min/60:.1f}")
             except Exception:
                 pass
-        csv = view.to_csv(index=False).encode("utf-8-sig")
-        st.download_button("📥 导出当前视图为 CSV", csv, "inspection_records.csv", "text/csv")
+        exp1, exp2 = st.columns(2)
+        with exp1:
+            csv = view.to_csv(index=False).encode("utf-8-sig")
+            st.download_button("📥 导出 CSV", csv, "inspection_records.csv",
+                               "text/csv", use_container_width=True)
+        with exp2:
+            try:
+                xlsx_bytes = make_excel(view[show_cols] if show_cols else view)
+                ts = datetime.now().strftime("%Y%m%d_%H%M")
+                st.download_button(
+                    "📊 导出 Excel",
+                    xlsx_bytes,
+                    f"来料检验记录_{ts}.xlsx",
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    use_container_width=True,
+                )
+            except Exception as e:
+                st.error(f"生成Excel失败：{e}")
