@@ -69,24 +69,30 @@ def get_gsheet():
         # 空表，写入表头
         ws.append_row(COLUMNS)
     elif values[0] != COLUMNS:
-        # 第一行不是正确表头：在最前面插入一行正确表头
-        # （原来误填的内容会被当作数据保留在下面）
-        ws.insert_row(COLUMNS, 1)
+        # 第一行不是当前正确表头：直接用正确表头覆盖第一行
+        # （注意：不insert，而是update第1行，避免插出多余的旧表头行）
+        ws.update([COLUMNS], "A1", value_input_option="USER_ENTERED")
     return ws
 
 def load_history(ws):
-    """按位置读取，不依赖get_all_records对表头的自动识别，避免重复表头报错"""
+    """读取数据。强制用 COLUMNS 作为列名，按位置对齐，避免表头错位/重复导致读不出。"""
     values = ws.get_all_values()
     if not values or len(values) < 2:
         return pd.DataFrame(columns=COLUMNS)
-    header = values[0]
-    rows = values[1:]
-    df = pd.DataFrame(rows, columns=header)
-    # 只保留我们关心的列，缺失的补空
-    for c in COLUMNS:
-        if c not in df.columns:
-            df[c] = ""
-    return df[COLUMNS]
+    rows = values[1:]  # 跳过表头行
+    ncol = len(COLUMNS)
+    # 补齐/截断每行到 COLUMNS 长度
+    norm_rows = []
+    for r in rows:
+        if len(r) < ncol:
+            r = r + [""] * (ncol - len(r))
+        elif len(r) > ncol:
+            r = r[:ncol]
+        norm_rows.append(r)
+    df = pd.DataFrame(norm_rows, columns=COLUMNS)
+    # 去掉完全空白的行
+    df = df[df.apply(lambda x: any(str(v).strip() for v in x), axis=1)].reset_index(drop=True)
+    return df
 
 def append_record(ws, row_dict):
     ws.append_row([str(row_dict.get(c,"")) for c in COLUMNS])
@@ -413,7 +419,12 @@ with tab1:
                 row[mf] = measure_values.get(mf, "")
             try:
                 append_record(ws, row)
-                st.success("✅ 记录已保存！")
+                # 验证：读取当前Sheet总行数
+                try:
+                    total = max(0, len(ws.get_all_values()) - 1)
+                except Exception:
+                    total = "?"
+                st.success(f"✅ 记录已保存！Google Sheets 当前共 {total} 条记录。")
                 st.cache_data.clear()
                 st.rerun()
             except Exception as e:
@@ -421,6 +432,7 @@ with tab1:
 
 with tab2:
     st.subheader("历史检验记录")
+    st.caption(f"📊 共从 Google Sheets 读取到 **{len(history_df)}** 条记录")
     if history_df.empty:
         st.info("暂无历史记录。")
     else:
