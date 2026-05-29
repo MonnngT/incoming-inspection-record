@@ -49,6 +49,9 @@ CONSECUTIVE_PASS_TO_START = 3
 SKIP_PATTERN_SKIP = 2
 SKIP_PATTERN_INSPECT = 1
 
+# 参与跳批检验的供应商白名单（其他供应商每批正常检验，不显示执行动作）
+SKIP_LOT_SUPPLIERS = {"速锐达(SP)", "AQ", "金*"}
+
 @st.cache_data
 def load_parts_data():
     with open("parts_data.json","r",encoding="utf-8") as f:
@@ -104,15 +107,28 @@ def overwrite_all(ws, df):
     ws.update(data, value_input_option="USER_ENTERED")
 
 def compute_action_and_cumulative(history_df, supplier, part_number, production_date):
+    # 计算累计批次数（所有供应商都算）
     if history_df.empty:
-        return 1, "正常检验"
+        cumulative = 1
+    else:
+        mask = ((history_df["供应商"].astype(str)==str(supplier)) &
+                (history_df["零件料号"].astype(str)==str(part_number)) &
+                (history_df["生产日期"].astype(str)==str(production_date)))
+        seq = history_df[mask].copy()
+        cumulative = len(seq) + 1
+
+    # 非白名单供应商：不参加跳批，执行动作返回空
+    if supplier not in SKIP_LOT_SUPPLIERS:
+        return cumulative, ""
+
+    # 白名单供应商：按跳批状态机判定
+    if history_df.empty or cumulative == 1:
+        return cumulative, "正常检验"
+
     mask = ((history_df["供应商"].astype(str)==str(supplier)) &
             (history_df["零件料号"].astype(str)==str(part_number)) &
             (history_df["生产日期"].astype(str)==str(production_date)))
     seq = history_df[mask].copy()
-    cumulative = len(seq) + 1
-    if seq.empty:
-        return cumulative, "正常检验"
     state="正常检验"; cp=0; sk=0
     for _, rec in seq.iterrows():
         is_pass = str(rec.get("结果","")).strip().upper()=="OK"
@@ -160,15 +176,21 @@ def recalculate_all(df):
 
     for i in range(len(df)):
         k = keys[i]
+        supplier_i = k[0]
         if k not in group_state:
             group_state[k] = {"state": "正常检验", "cp": 0, "sk": 0, "count": 0}
         gs = group_state[k]
 
-        # 当前这批的累计批次 = 组内已出现数 + 1
+        # 当前这批的累计批次 = 组内已出现数 + 1（所有供应商都算）
         gs["count"] += 1
         new_cum[i] = gs["count"]
 
-        # 决定当前批动作（基于进入这批之前的状态）
+        # 非白名单供应商：执行动作留空，跳过跳批状态推进
+        if supplier_i not in SKIP_LOT_SUPPLIERS:
+            new_act[i] = ""
+            continue
+
+        # 白名单供应商：按跳批状态机判定执行动作
         if gs["state"] == "正常检验":
             new_act[i] = "正常检验"
         else:
@@ -258,6 +280,11 @@ def make_excel(df):
 
 # ---------- 界面 ----------
 st.title("📋 来料检验记录系统")
+st.markdown(
+    '<p style="color:#C0392B; font-size:14px; margin-top:-10px;">'
+    '※ 只有 AQ、SP、金* 参加跳批检验，其他供应商每批正常检验</p>',
+    unsafe_allow_html=True,
+)
 
 try:
     ws = get_gsheet()
@@ -356,7 +383,10 @@ with tab1:
     diff_min = (dt_end - dt_start).total_seconds()/60
     if diff_min < 0: diff_min += 24*60
 
-    if "跳批（不检验尺寸）" in action:
+    if not action:
+        # 非白名单供应商：执行动作为空
+        action_html = '<span style="color:#999;">—</span>'
+    elif "跳批（不检验尺寸）" in action:
         action_html = f'<span class="action-skip">{action}</span>'
     elif "跳批检验" in action:
         action_html = f'<span class="action-skip-inspect">{action}</span>'
@@ -387,7 +417,10 @@ with tab1:
     for i, dc in enumerate(dcols):
         dc.markdown(f'<div class="tbl-cell">{values[i]}</div>', unsafe_allow_html=True)
 
-    if "跳批（不检验尺寸）" in action:
+    if not action:
+        # 非白名单供应商：不显示跳批/正常的提示框
+        pass
+    elif "跳批（不检验尺寸）" in action:
         st.success("✅ 本批跳过尺寸检验，只做外观 + 包装数量")
     elif "跳批检验" in action:
         st.info("🔍 跳批序列的检验批，需做全项目检验（外观+尺寸+包装数量）")
