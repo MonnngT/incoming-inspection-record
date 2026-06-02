@@ -347,10 +347,15 @@ with tab1:
 
     # 第三排：开始时间、结束时间、结果
     c9, c10, c11, c12 = st.columns(4)
+    # 用session_state保存时间，避免每次脚本重跑时被datetime.now()覆盖
+    if "start_time" not in st.session_state:
+        st.session_state["start_time"] = datetime.now().time().replace(second=0, microsecond=0)
+    if "end_time" not in st.session_state:
+        st.session_state["end_time"] = datetime.now().time().replace(second=0, microsecond=0)
     with c9:
-        start_time = st.time_input("开始时间", value=datetime.now().time())
+        start_time = st.time_input("开始时间", key="start_time")
     with c10:
-        end_time = st.time_input("结束时间", value=datetime.now().time())
+        end_time = st.time_input("结束时间", key="end_time")
     with c11:
         result = st.selectbox("结果", RESULTS)
     with c12:
@@ -458,6 +463,10 @@ with tab1:
                 except Exception:
                     total = "?"
                 st.success(f"✅ 记录已保存！Google Sheets 当前共 {total} 条记录。")
+                # 保存成功后清掉时间状态，让下一条记录用当前最新时间
+                for k in ("start_time", "end_time"):
+                    if k in st.session_state:
+                        del st.session_state[k]
                 st.cache_data.clear()
                 st.rerun()
             except Exception as e:
