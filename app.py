@@ -8,7 +8,7 @@ import streamlit as st
 import pandas as pd
 import json
 import io
-from datetime import datetime, date
+from datetime import datetime, date, time
 import gspread
 from google.oauth2.service_account import Credentials
 
@@ -347,15 +347,45 @@ with tab1:
 
     # 第三排：开始时间、结束时间、结果
     c9, c10, c11, c12 = st.columns(4)
-    # 用session_state保存时间，避免每次脚本重跑时被datetime.now()覆盖
-    if "start_time" not in st.session_state:
-        st.session_state["start_time"] = datetime.now().time().replace(second=0, microsecond=0)
-    if "end_time" not in st.session_state:
-        st.session_state["end_time"] = datetime.now().time().replace(second=0, microsecond=0)
+    # 用session_state持久化时分，鼠标悬停+滚轮即可快速调整（像密码锁）
+    if "start_hour" not in st.session_state:
+        _now = datetime.now()
+        st.session_state["start_hour"] = _now.hour
+        st.session_state["start_minute"] = _now.minute
+        st.session_state["end_hour"] = _now.hour
+        st.session_state["end_minute"] = _now.minute
     with c9:
-        start_time = st.time_input("开始时间", key="start_time")
+        st.markdown("**开始时间**")
+        sh_col, sm_col = st.columns(2)
+        with sh_col:
+            start_h = st.number_input(
+                "时", min_value=0, max_value=23, step=1,
+                key="start_hour", label_visibility="collapsed",
+                help="时(0-23)：鼠标悬停后滚轮可快速调节",
+            )
+        with sm_col:
+            start_m = st.number_input(
+                "分", min_value=0, max_value=59, step=1,
+                key="start_minute", label_visibility="collapsed",
+                help="分(0-59)",
+            )
+        start_time = time(int(start_h), int(start_m))
     with c10:
-        end_time = st.time_input("结束时间", key="end_time")
+        st.markdown("**结束时间**")
+        eh_col, em_col = st.columns(2)
+        with eh_col:
+            end_h = st.number_input(
+                "时", min_value=0, max_value=23, step=1,
+                key="end_hour", label_visibility="collapsed",
+                help="时(0-23)：鼠标悬停后滚轮可快速调节",
+            )
+        with em_col:
+            end_m = st.number_input(
+                "分", min_value=0, max_value=59, step=1,
+                key="end_minute", label_visibility="collapsed",
+                help="分(0-59)",
+            )
+        end_time = time(int(end_h), int(end_m))
     with c11:
         result = st.selectbox("结果", RESULTS)
     with c12:
@@ -382,11 +412,10 @@ with tab1:
         defect_note = ""
 
     cumulative, action = compute_action_and_cumulative(history_df, supplier, part_number, production_date)
-    today = date.today()
-    dt_start = datetime.combine(today, start_time)
-    dt_end = datetime.combine(today, end_time)
-    diff_min = (dt_end - dt_start).total_seconds()/60
-    if diff_min < 0: diff_min += 24*60
+    # 直接用小时分钟整数算时间差
+    diff_min = (int(end_h) * 60 + int(end_m)) - (int(start_h) * 60 + int(start_m))
+    if diff_min < 0:
+        diff_min += 24 * 60  # 跨天保护
 
     if not action:
         # 非白名单供应商：执行动作为空
@@ -464,7 +493,7 @@ with tab1:
                     total = "?"
                 st.success(f"✅ 记录已保存！Google Sheets 当前共 {total} 条记录。")
                 # 保存成功后清掉时间状态，让下一条记录用当前最新时间
-                for k in ("start_time", "end_time"):
+                for k in ("start_hour", "start_minute", "end_hour", "end_minute"):
                     if k in st.session_state:
                         del st.session_state[k]
                 st.cache_data.clear()
