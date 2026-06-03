@@ -355,37 +355,49 @@ with tab1:
         st.session_state["end_hour"] = _now.hour
         st.session_state["end_minute"] = _now.minute
     with c9:
-        st.markdown("**开始时间**")
+        st.markdown("**开始时间** <span style='color:#888;font-size:11px;'>(滚轮/按钮/键盘)</span>",
+                    unsafe_allow_html=True)
         sh_col, sm_col = st.columns(2)
         with sh_col:
             start_h = st.number_input(
-                "时", min_value=0, max_value=23, step=1,
-                key="start_hour", label_visibility="collapsed",
-                help="时(0-23)：鼠标悬停后滚轮可快速调节",
+                "时 (0-23)", min_value=0, max_value=23, step=1,
+                key="start_hour",
+                help="鼠标悬停后滚轮可快速调节，或直接键盘输入数字",
             )
         with sm_col:
             start_m = st.number_input(
-                "分", min_value=0, max_value=59, step=1,
-                key="start_minute", label_visibility="collapsed",
-                help="分(0-59)",
+                "分 (0-59)", min_value=0, max_value=59, step=1,
+                key="start_minute",
             )
         start_time = time(int(start_h), int(start_m))
+        st.markdown(
+            f"<div style='text-align:center;font-size:18px;font-weight:bold;"
+            f"color:#1F4E79;background:#E8F0F8;border-radius:4px;padding:4px;'>"
+            f"⏱️ {int(start_h):02d} : {int(start_m):02d}</div>",
+            unsafe_allow_html=True,
+        )
     with c10:
-        st.markdown("**结束时间**")
+        st.markdown("**结束时间** <span style='color:#888;font-size:11px;'>(滚轮/按钮/键盘)</span>",
+                    unsafe_allow_html=True)
         eh_col, em_col = st.columns(2)
         with eh_col:
             end_h = st.number_input(
-                "时", min_value=0, max_value=23, step=1,
-                key="end_hour", label_visibility="collapsed",
-                help="时(0-23)：鼠标悬停后滚轮可快速调节",
+                "时 (0-23)", min_value=0, max_value=23, step=1,
+                key="end_hour",
+                help="鼠标悬停后滚轮可快速调节，或直接键盘输入数字",
             )
         with em_col:
             end_m = st.number_input(
-                "分", min_value=0, max_value=59, step=1,
-                key="end_minute", label_visibility="collapsed",
-                help="分(0-59)",
+                "分 (0-59)", min_value=0, max_value=59, step=1,
+                key="end_minute",
             )
         end_time = time(int(end_h), int(end_m))
+        st.markdown(
+            f"<div style='text-align:center;font-size:18px;font-weight:bold;"
+            f"color:#1F4E79;background:#E8F0F8;border-radius:4px;padding:4px;'>"
+            f"⏱️ {int(end_h):02d} : {int(end_m):02d}</div>",
+            unsafe_allow_html=True,
+        )
     with c11:
         result = st.selectbox("结果", RESULTS)
     with c12:
