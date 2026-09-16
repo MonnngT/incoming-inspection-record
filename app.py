@@ -34,14 +34,18 @@ div[data-testid="stHorizontalBlock"] { gap: 0.4rem; }
 </style>
 """, unsafe_allow_html=True)
 
-# 8个可能的测量字段（按料号动态显示，存表时固定为列）
-MEASURE_COLS = ["仿形间隙测量数据","轮毂外径尺寸","内径尺寸","裙边厚度",
-                "裙边高度","轴套总长","轮毂间隙","扇叶重量"]
+# 原有8个测量字段。保持原列顺序，避免Google Sheets历史数据错位。
+LEGACY_MEASURE_COLS = ["仿形间隙测量数据","轮毂外径尺寸","内径尺寸","裙边厚度",
+                       "裙边高度","轴套总长","轮毂间隙","扇叶重量"]
+MEASURE_COLS = LEGACY_MEASURE_COLS + ["法兰尺寸"]
+GAUGE_COLS = ["内径检具检验", "轮毂外径检具检验", "法兰检具检验"]
+GAUGE_RESULTS = ["请选择", "OK", "NG"]
 
 COLUMNS = ["到货日期","订单号","供应商","零件料号","零件名称","生产日期",
            "来料总数量","检验数量","累计批次数","执行动作",
            "开始时间","结束时间","检验用时(分钟)","结果","不良备注"] \
-          + MEASURE_COLS + ["检验员","记录时间"]
+          + LEGACY_MEASURE_COLS + ["检验员","记录时间"] \
+          + ["法兰尺寸"] + GAUGE_COLS
 INSPECTORS = ["杨明","田志高","其他"]
 RESULTS = ["OK","NG"]
 PO_PREFIXES = ["ST-PO", "SZ-PO"]
@@ -58,6 +62,28 @@ def load_parts_data():
         return json.load(f)
 PARTS_DATA = load_parts_data()
 SUPPLIERS = list(PARTS_DATA.keys())
+
+
+def get_part_inspection_fields(part):
+    """按产品类别补充尺寸和每批必检的检具项目。"""
+    measure_fields = list(part.get("measure_fields", []))
+    part_name = str(part.get("part_name", ""))
+
+    # Boss类轴套：增加法兰尺寸和法兰检具检验。
+    if "boss" in part_name.casefold():
+        if "法兰尺寸" not in measure_fields:
+            measure_fields.append("法兰尺寸")
+        gauge_fields = ["法兰检具检验"]
+    # 扇叶：轮毂外径对应轮毂外径检具。
+    elif "轮毂外径尺寸" in measure_fields:
+        gauge_fields = ["轮毂外径检具检验"]
+    # 盘类：内径对应内径检具。
+    elif "内径尺寸" in measure_fields:
+        gauge_fields = ["内径检具检验"]
+    else:
+        gauge_fields = []
+
+    return measure_fields, gauge_fields
 
 @st.cache_resource
 def get_gsheet():
@@ -326,9 +352,9 @@ with tab1:
             selected_part = part_display_map[part_disp]
             part_number = selected_part["part_number"]
             part_name = selected_part.get("part_name","")
-            measure_fields = selected_part.get("measure_fields", [])
+            measure_fields, gauge_fields = get_part_inspection_fields(selected_part)
         else:
-            st.warning("该供应商暂无料号"); part_number=""; part_name=""; measure_fields=[]
+            st.warning("该供应商暂无料号"); part_number=""; part_name=""; measure_fields=[]; gauge_fields=[]
 
     # 第二排：生产日期、来料总数量、检验数量、检验员
     c5, c6, c7, c8 = st.columns(4)
@@ -403,17 +429,42 @@ with tab1:
     with c12:
         st.empty()
 
-    # 动态测量字段（根据料号显示）
+    cumulative, action = compute_action_and_cumulative(history_df, supplier, part_number, production_date)
+    skip_dimension_inspection = action == "跳批（不检验尺寸）"
+
+    # 尺寸项目参加跳批：跳批时不要求填写尺寸数据。
     measure_values = {}
-    if measure_fields:
+    if measure_fields and not skip_dimension_inspection:
         st.markdown("##### 📐 测量数据（根据所选料号显示）")
         mcols = st.columns(min(len(measure_fields), 4))
         for idx, field in enumerate(measure_fields):
             with mcols[idx % len(mcols)]:
                 measure_values[field] = st.text_input(field, "", placeholder="填入数值，如 12.5")
+    elif measure_fields:
+        st.info("本批跳过尺寸数值检验；关键检具仍须检查并记录结果。")
+
+    # 检具项目不参加跳批，每批均显示并强制选择结果。
+    gauge_values = {}
+    if gauge_fields:
+        st.markdown("##### 🧰 检具检验（每批必检，不参加跳批）")
+        gcols = st.columns(min(len(gauge_fields), 4))
+        for idx, field in enumerate(gauge_fields):
+            with gcols[idx % len(gcols)]:
+                gauge_values[field] = st.selectbox(
+                    field,
+                    GAUGE_RESULTS,
+                    index=0,
+                    key=f"gauge_{part_number}_{field}",
+                )
+
+    gauge_incomplete = any(value == "请选择" for value in gauge_values.values())
+    gauge_has_ng = any(value == "NG" for value in gauge_values.values())
+    record_result = "NG" if gauge_has_ng else result
+    if gauge_has_ng:
+        st.error("检具检验结果为 NG，本批最终结果已自动判定为 NG。")
 
     # NG 时弹出不良内容备注框
-    if result == "NG":
+    if record_result == "NG":
         defect_note = st.text_area(
             "⚠️ 不良内容（NG必填）",
             value="",
@@ -423,7 +474,6 @@ with tab1:
     else:
         defect_note = ""
 
-    cumulative, action = compute_action_and_cumulative(history_df, supplier, part_number, production_date)
     # 直接用小时分钟整数算时间差
     diff_min = (int(end_h) * 60 + int(end_m)) - (int(start_h) * 60 + int(start_m))
     if diff_min < 0:
@@ -458,7 +508,7 @@ with tab1:
     values = [str(arrival_date), order_no if order_no else "—", supplier, pn_disp, str(production_date),
               str(int(total_qty)), str(int(inspect_qty)), str(cumulative),
               action_html, start_time.strftime("%H:%M"), end_time.strftime("%H:%M"),
-              f"{diff_min:.0f}", result, inspector if inspector else "—"]
+              f"{diff_min:.0f}", record_result, inspector if inspector else "—"]
     dcols = st.columns(weights)
     for i, dc in enumerate(dcols):
         dc.markdown(f'<div class="tbl-cell">{values[i]}</div>', unsafe_allow_html=True)
@@ -467,11 +517,11 @@ with tab1:
         # 非白名单供应商：不显示跳批/正常的提示框
         pass
     elif "跳批（不检验尺寸）" in action:
-        st.success("✅ 本批跳过尺寸检验，只做外观 + 包装数量")
+        st.success("✅ 本批跳过尺寸数值检验；外观、包装数量和关键检具仍须检查")
     elif "跳批检验" in action:
-        st.info("🔍 跳批序列的检验批，需做全项目检验（外观+尺寸+包装数量）")
+        st.info("🔍 跳批序列的检验批，需做全项目检验（外观+尺寸+包装数量+关键检具）")
     else:
-        st.warning("📋 正常检验：外观 + 尺寸 + 包装数量全检")
+        st.warning("📋 正常检验：外观 + 尺寸 + 包装数量 + 关键检具")
 
     st.divider()
     if st.button("💾 保存记录到 Google Sheets", type="primary", use_container_width=True):
@@ -483,7 +533,9 @@ with tab1:
             st.error("请填写订单号。")
         elif inspector_sel=="其他" and not inspector.strip():
             st.error("请填写检验员姓名。")
-        elif result == "NG" and not defect_note.strip():
+        elif gauge_incomplete:
+            st.error("请完成所有检具检验项目后再保存。")
+        elif record_result == "NG" and not defect_note.strip():
             st.error("结果为 NG，请填写不良内容后再保存。")
         else:
             row = {"到货日期":str(arrival_date),"订单号":order_no,"供应商":supplier,
@@ -491,11 +543,13 @@ with tab1:
                    "来料总数量":int(total_qty),"检验数量":int(inspect_qty),
                    "累计批次数":cumulative,"执行动作":action,
                    "开始时间":start_time.strftime("%H:%M"),"结束时间":end_time.strftime("%H:%M"),
-                   "检验用时(分钟)":f"{diff_min:.0f}","结果":result,"不良备注":defect_note.strip(),
+                   "检验用时(分钟)":f"{diff_min:.0f}","结果":record_result,"不良备注":defect_note.strip(),
                    "检验员":inspector,"记录时间":datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
             # 测量字段（未显示的留空）
             for mf in MEASURE_COLS:
                 row[mf] = measure_values.get(mf, "")
+            for gf in GAUGE_COLS:
+                row[gf] = gauge_values.get(gf, "")
             try:
                 append_record(ws, row)
                 # 验证：读取当前Sheet总行数
@@ -538,7 +592,7 @@ with tab2:
 
         show_cols = ["到货日期","订单号","供应商","零件料号","生产日期","来料总数量","检验数量",
                      "累计批次数","执行动作","开始时间","结束时间","检验用时(分钟)","结果","不良备注"] \
-                    + MEASURE_COLS + ["检验员"]
+                    + MEASURE_COLS + GAUGE_COLS + ["检验员"]
         show_cols = [c for c in show_cols if c in view.columns]
 
         st.markdown("##### 📝 编辑 / 删除记录")
@@ -562,6 +616,10 @@ with tab2:
                 "结果": st.column_config.SelectboxColumn("结果", options=RESULTS, width="small"),
                 "不良备注": st.column_config.TextColumn("不良备注", width="medium"),
                 "检验员": st.column_config.TextColumn("检验员"),
+                **{
+                    col: st.column_config.SelectboxColumn(col, options=["OK", "NG"], width="small")
+                    for col in GAUGE_COLS
+                },
             },
             disabled=["累计批次数", "执行动作"],  # 这两列由系统计算，不允许手改
         )
