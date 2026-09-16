@@ -371,7 +371,7 @@ with tab1:
         else:
             inspector = inspector_sel
 
-    # 第三排：开始时间、结束时间、结果
+    # 第三排：开始时间、结束时间。最终结果放在全部检验项目之后选择。
     c9, c10, c11, c12 = st.columns(4)
     # 用session_state持久化时分，鼠标悬停+滚轮即可快速调整（像密码锁）
     if "start_hour" not in st.session_state:
@@ -425,7 +425,7 @@ with tab1:
             unsafe_allow_html=True,
         )
     with c11:
-        result = st.selectbox("结果", RESULTS)
+        st.empty()
     with c12:
         st.empty()
 
@@ -459,9 +459,24 @@ with tab1:
 
     gauge_incomplete = any(value == "请选择" for value in gauge_values.values())
     gauge_has_ng = any(value == "NG" for value in gauge_values.values())
-    record_result = "NG" if gauge_has_ng else result
     if gauge_has_ng:
-        st.error("检具检验结果为 NG，本批最终结果已自动判定为 NG。")
+        st.error("检具检验结果为 NG，最终检验结果必须选择 NG。")
+
+    # 所有检验项目完成后，由检验员选择最终结果。
+    st.markdown("##### ✅ 最终检验结果")
+    result_col, _, _, _ = st.columns(4)
+    with result_col:
+        result = st.selectbox(
+            "最终结果",
+            ["请选择"] + RESULTS,
+            index=0,
+            help="请完成尺寸和检具检查后，再选择本批最终结果。",
+        )
+    result_incomplete = result == "请选择"
+    result_conflict = gauge_has_ng and result == "OK"
+    record_result = "" if result_incomplete else result
+    if result_conflict:
+        st.error("检具检验存在 NG，最终结果不能选择 OK，请改为 NG。")
 
     # NG 时弹出不良内容备注框
     if record_result == "NG":
@@ -508,7 +523,7 @@ with tab1:
     values = [str(arrival_date), order_no if order_no else "—", supplier, pn_disp, str(production_date),
               str(int(total_qty)), str(int(inspect_qty)), str(cumulative),
               action_html, start_time.strftime("%H:%M"), end_time.strftime("%H:%M"),
-              f"{diff_min:.0f}", record_result, inspector if inspector else "—"]
+              f"{diff_min:.0f}", record_result if record_result else "—", inspector if inspector else "—"]
     dcols = st.columns(weights)
     for i, dc in enumerate(dcols):
         dc.markdown(f'<div class="tbl-cell">{values[i]}</div>', unsafe_allow_html=True)
@@ -535,6 +550,10 @@ with tab1:
             st.error("请填写检验员姓名。")
         elif gauge_incomplete:
             st.error("请完成所有检具检验项目后再保存。")
+        elif result_incomplete:
+            st.error("请在完成全部检验后选择最终结果。")
+        elif result_conflict:
+            st.error("检具检验存在 NG，最终结果必须选择 NG。")
         elif record_result == "NG" and not defect_note.strip():
             st.error("结果为 NG，请填写不良内容后再保存。")
         else:
