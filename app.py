@@ -10,6 +10,7 @@ import json
 import io
 from datetime import datetime, date, time
 import gspread
+from gspread.utils import rowcol_to_a1
 from google.oauth2.service_account import Credentials
 
 st.set_page_config(page_title="来料检验记录系统", page_icon="📋", layout="wide")
@@ -153,9 +154,9 @@ def compute_action_and_cumulative(history_df, supplier, part_number, production_
         seq = history_df[mask].copy()
         cumulative = len(seq) + 1
 
-    # 非白名单供应商：不参加跳批，执行动作返回空
+    # 非白名单供应商：不参加跳批，每批固定显示正常检验。
     if supplier not in SKIP_LOT_SUPPLIERS:
-        return cumulative, ""
+        return cumulative, "正常检验"
 
     # 白名单供应商：按跳批状态机判定
     if history_df.empty or cumulative == 1:
@@ -197,6 +198,7 @@ def recalculate_all(df):
     if df.empty:
         return df
     df = df.copy().reset_index(drop=True)
+    df["_orig_idx"] = range(len(df))
     # 保持原始顺序作为序列顺序（记录时间升序更准，若无则按现有顺序）
     if "记录时间" in df.columns and df["记录时间"].astype(str).str.strip().ne("").any():
         df["_ord"] = pd.to_datetime(df["记录时间"], errors="coerce")
@@ -221,9 +223,9 @@ def recalculate_all(df):
         gs["count"] += 1
         new_cum[i] = gs["count"]
 
-        # 非白名单供应商：执行动作留空，跳过跳批状态推进
+        # 非白名单供应商：每批固定为正常检验，跳过跳批状态推进。
         if supplier_i not in SKIP_LOT_SUPPLIERS:
-            new_act[i] = ""
+            new_act[i] = "正常检验"
             continue
 
         # 白名单供应商：按跳批状态机判定执行动作
@@ -254,7 +256,35 @@ def recalculate_all(df):
     df["执行动作"] = new_act
     if "_ord" in df.columns:
         df = df.drop(columns=["_ord"])
+    # 计算时可按记录时间排序，但回写时必须恢复Google Sheets原行序。
+    df = df.sort_values("_orig_idx", kind="stable").drop(columns=["_orig_idx"]).reset_index(drop=True)
     return df
+
+
+def sync_history_system_fields(ws, history_df):
+    """重新计算并回写历史记录的累计批次数和执行动作。"""
+    if history_df.empty:
+        return history_df, 0
+
+    recalculated = recalculate_all(history_df)
+    system_cols = ["累计批次数", "执行动作"]
+    before = history_df[system_cols].fillna("").astype(str).reset_index(drop=True)
+    after = recalculated[system_cols].fillna("").astype(str).reset_index(drop=True)
+    changed_rows = (before != after).any(axis=1)
+    changed_count = int(changed_rows.sum())
+
+    if changed_count:
+        start_col = COLUMNS.index(system_cols[0]) + 1
+        end_col = COLUMNS.index(system_cols[-1]) + 1
+        start_cell = rowcol_to_a1(2, start_col)
+        end_cell = rowcol_to_a1(len(after) + 1, end_col)
+        ws.update(
+            after.values.tolist(),
+            f"{start_cell}:{end_cell}",
+            value_input_option="USER_ENTERED",
+        )
+
+    return recalculated, changed_count
 
 
 def get_production_dates(history_df, supplier, part_number):
@@ -325,7 +355,11 @@ st.markdown(
 try:
     ws = get_gsheet()
     history_df = load_history(ws)
+    # 自动补全旧记录中空白或不正确的系统字段，并将结果写回Google Sheets。
+    history_df, repaired_history_count = sync_history_system_fields(ws, history_df)
     gsheet_ok = True
+    if repaired_history_count:
+        st.success(f"✅ 已自动校正 {repaired_history_count} 条历史记录的累计批次数和执行动作。")
 except Exception as e:
     st.error(f"⚠️ Google Sheets 连接失败：{e}")
     st.info("请检查 Streamlit secrets 中的 gcp_service_account 和 sheet.key 配置。")
