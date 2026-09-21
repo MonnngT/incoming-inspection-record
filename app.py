@@ -361,7 +361,7 @@ try:
     if repaired_history_count:
         st.success(f"✅ 已自动校正 {repaired_history_count} 条历史记录的累计批次数和执行动作。")
 except Exception as e:
-    st.error(f"⚠️ Google Sheets 连接失败：{e}")
+    st.error(f"⚠️ 数据表连接失败：{e}")
     st.info("请检查 Streamlit secrets 中的 gcp_service_account 和 sheet.key 配置。")
     history_df = pd.DataFrame(columns=COLUMNS)
     gsheet_ok = False
@@ -583,9 +583,9 @@ with tab1:
         st.warning("📋 正常检验：外观 + 尺寸 + 包装数量 + 关键检具")
 
     st.divider()
-    if st.button("💾 保存记录到 Google Sheets", type="primary", use_container_width=True):
+    if st.button("💾 保存记录", type="primary", use_container_width=True):
         if not gsheet_ok:
-            st.error("Google Sheets 未连接，无法保存。")
+            st.error("数据表未连接，无法保存。")
         elif not part_number:
             st.error("请选择有效料号。")
         elif not po_number.strip():
@@ -620,7 +620,7 @@ with tab1:
                     total = max(0, len(ws.get_all_values()) - 1)
                 except Exception:
                     total = "?"
-                st.success(f"✅ 记录已保存！Google Sheets 当前共 {total} 条记录。")
+                st.success(f"✅ 记录已保存！当前共 {total} 条记录。")
                 # 保存成功后清掉时间状态，让下一条记录用当前最新时间
                 for k in ("start_hour", "start_minute", "end_hour", "end_minute"):
                     if k in st.session_state:
@@ -632,7 +632,7 @@ with tab1:
 
 with tab2:
     st.subheader("历史检验记录")
-    st.caption(f"📊 共从 Google Sheets 读取到 **{len(history_df)}** 条记录")
+    st.caption(f"📊 共读取到 **{len(history_df)}** 条历史记录")
     if history_df.empty:
         st.info("暂无历史记录。")
     else:
@@ -659,7 +659,7 @@ with tab2:
         show_cols = [c for c in show_cols if c in view.columns]
 
         st.markdown("##### 📝 编辑 / 删除记录")
-        st.caption("双击单元格可直接修改内容；勾选「删除」列后点下方按钮删除。修改和删除后需点「保存修改到 Google Sheets」生效。")
+        st.caption("双击单元格可直接修改内容；勾选「删除」列后点下方按钮删除。修改和删除后需点「保存修改」生效。")
 
         # 全选删除
         select_all = st.checkbox("全选（勾选后将删除全部当前显示的记录）")
@@ -693,7 +693,7 @@ with tab2:
         btn1, btn2 = st.columns(2)
 
         with btn1:
-            if st.button("💾 保存修改到 Google Sheets", type="primary", use_container_width=True):
+            if st.button("💾 保存修改", type="primary", use_container_width=True):
                 try:
                     new_hist = history_df.copy().reset_index(drop=True)
                     view_rows = view["_行号"].tolist()
