@@ -101,7 +101,11 @@ def get_gsheet():
     creds = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scopes)
     client = gspread.authorize(creds)
     sh = client.open_by_key(st.secrets["sheet"]["key"])
-    ws = sh.sheet1
+    worksheet_name = st.secrets["sheet"].get("worksheet", "")
+    ws = sh.worksheet(worksheet_name) if worksheet_name else sh.sheet1
+    # 新增检具后已有29列，旧工作表可能仍只有26列。
+    if ws.col_count < len(COLUMNS):
+        ws.resize(cols=len(COLUMNS))
     values = ws.get_all_values()
     if not values:
         # 空表，写入表头
@@ -109,7 +113,7 @@ def get_gsheet():
     elif values[0] != COLUMNS:
         # 第一行不是当前正确表头：直接用正确表头覆盖第一行
         # （注意：不insert，而是update第1行，避免插出多余的旧表头行）
-        ws.update([COLUMNS], "A1", value_input_option="USER_ENTERED")
+        ws.update(values=[COLUMNS], range_name="A1", value_input_option="RAW")
     return ws
 
 def load_history(ws):
@@ -121,27 +125,41 @@ def load_history(ws):
     ncol = len(COLUMNS)
     # 补齐/截断每行到 COLUMNS 长度
     norm_rows = []
-    for r in rows:
+    sheet_rows = []
+    for sheet_row, r in enumerate(rows, start=2):
         if len(r) < ncol:
             r = r + [""] * (ncol - len(r))
         elif len(r) > ncol:
             r = r[:ncol]
-        norm_rows.append(r)
+        if any(str(v).strip() for v in r):
+            norm_rows.append(r)
+            sheet_rows.append(sheet_row)
     df = pd.DataFrame(norm_rows, columns=COLUMNS)
-    # 去掉完全空白的行
-    df = df[df.apply(lambda x: any(str(v).strip() for v in x), axis=1)].reset_index(drop=True)
+    # 保留实际行号，自动校正不能因中间空白行而写错记录。
+    df.attrs["sheet_rows"] = sheet_rows
     # 历史记录中的旧名称在内存中统一为SP，确保原有记录继续参与累计和跳批判定。
     df["供应商"] = df["供应商"].map(normalize_supplier)
     return df
 
 def append_record(ws, row_dict):
-    ws.append_row([str(row_dict.get(c,"")) for c in COLUMNS])
+    response = ws.append_row(
+        [str(row_dict.get(c, "")) for c in COLUMNS],
+        value_input_option="RAW",
+        table_range=f"A:{rowcol_to_a1(1, len(COLUMNS))[:-1]}",
+    )
+    if response.get("updates", {}).get("updatedRows") != 1:
+        raise RuntimeError("未能确认写入结果，请先刷新历史记录核对，避免重复登记。")
+    return response
 
 def overwrite_all(ws, df):
     """用df完整覆盖整个工作表（含表头）。用于修改/删除后回写。"""
-    ws.clear()
-    data = [COLUMNS] + df[COLUMNS].astype(str).values.tolist()
-    ws.update(data, value_input_option="USER_ENTERED")
+    # 不能先clear再update，否则update失败会导致历史数据被清空。
+    old_row_count = len(ws.get_all_values())
+    data = [COLUMNS] + df[COLUMNS].fillna("").astype(str).values.tolist()
+    if ws.row_count < len(data):
+        ws.resize(rows=len(data))
+    data += [[""] * len(COLUMNS) for _ in range(max(0, old_row_count - len(data)))]
+    ws.update(values=data, range_name="A1", value_input_option="RAW")
 
 def compute_action_and_cumulative(history_df, supplier, part_number, production_date):
     # 计算累计批次数（所有供应商都算）
@@ -276,15 +294,27 @@ def sync_history_system_fields(ws, history_df):
     if changed_count:
         start_col = COLUMNS.index(system_cols[0]) + 1
         end_col = COLUMNS.index(system_cols[-1]) + 1
-        start_cell = rowcol_to_a1(2, start_col)
-        end_cell = rowcol_to_a1(len(after) + 1, end_col)
-        ws.update(
-            after.values.tolist(),
-            f"{start_cell}:{end_cell}",
-            value_input_option="USER_ENTERED",
-        )
+        sheet_rows = history_df.attrs.get("sheet_rows", list(range(2, len(after) + 2)))
+        updates = []
+        for i in range(len(after)):
+            if changed_rows.iloc[i]:
+                start_cell = rowcol_to_a1(sheet_rows[i], start_col)
+                end_cell = rowcol_to_a1(sheet_rows[i], end_col)
+                updates.append({"range": f"{start_cell}:{end_cell}",
+                                "values": [after.iloc[i].tolist()]})
+        ws.batch_update(updates, value_input_option="RAW")
 
     return recalculated, changed_count
+
+
+def load_and_repair_history(ws):
+    """读取失败向上报告；校正写回失败仍保留已经读取的历史记录。"""
+    history = load_history(ws)
+    try:
+        history, repaired_count = sync_history_system_fields(ws, history)
+        return history, repaired_count, ""
+    except Exception as exc:
+        return recalculate_all(history), 0, str(exc)
 
 
 def get_production_dates(history_df, supplier, part_number):
@@ -352,19 +382,37 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+if st.button("🔄 刷新历史记录", key="refresh_history"):
+    get_gsheet.clear()
+    st.rerun()
+
+save_notice = st.session_state.pop("save_notice", "")
+if save_notice:
+    st.success(save_notice)
+
+ws = None
+history_read_ok = False
 try:
     ws = get_gsheet()
-    history_df = load_history(ws)
-    # 自动补全旧记录中空白或不正确的系统字段，并将结果写回Google Sheets。
-    history_df, repaired_history_count = sync_history_system_fields(ws, history_df)
+    source_key = (ws.spreadsheet_id, ws.id)
+    st.caption(f"当前数据工作表：{ws.title}")
+    history_df, repaired_history_count, repair_error = load_and_repair_history(ws)
+    history_read_ok = True
     gsheet_ok = True
+    st.session_state["history_snapshot"] = {"source": source_key, "data": history_df.copy()}
+    if repair_error:
+        st.warning(f"历史记录已读取，但累计批次自动校正写回失败；记录仍可查看。详情：{repair_error}")
     if repaired_history_count:
         st.success(f"✅ 已自动校正 {repaired_history_count} 条历史记录的累计批次数和执行动作。")
 except Exception as e:
-    st.error(f"⚠️ 数据表连接失败：{e}")
-    st.info("请检查 Streamlit secrets 中的 gcp_service_account 和 sheet.key 配置。")
+    st.error(f"⚠️ 历史记录读取失败：{e}")
+    st.info("请点击「刷新历史记录」重试；持续失败时检查数据表共享权限和连接配置。")
     history_df = pd.DataFrame(columns=COLUMNS)
     gsheet_ok = False
+    snapshot = st.session_state.get("history_snapshot")
+    if ws is not None and snapshot and snapshot["source"] == (ws.spreadsheet_id, ws.id):
+        history_df = snapshot["data"].copy()
+        st.warning("当前显示本次会话上一次成功读取的记录，尚未确认最新数据，暂时不能新增、修改或删除。")
 
 tab1, tab2 = st.tabs(["✍️ 新增检验记录", "📜 历史记录"])
 
@@ -615,12 +663,13 @@ with tab1:
                 row[gf] = gauge_values.get(gf, "")
             try:
                 append_record(ws, row)
-                # 验证：读取当前Sheet总行数
-                try:
-                    total = max(0, len(ws.get_all_values()) - 1)
-                except Exception:
-                    total = "?"
-                st.success(f"✅ 记录已保存！当前共 {total} 条记录。")
+                # 写入接口已确认成功；保存本次会话快照和提示供刷新后显示。
+                latest = pd.concat([history_df, pd.DataFrame([row], columns=COLUMNS)], ignore_index=True)
+                st.session_state["history_snapshot"] = {"source": source_key, "data": latest}
+                st.session_state["save_notice"] = "✅ 记录已保存，可到「历史记录」页查看。"
+                # 新记录不能被上一次筛选或编辑状态隐藏。
+                for k in ("f_supplier", "f_part", "f_result", "hist_editor", "history_select_all"):
+                    st.session_state.pop(k, None)
                 # 保存成功后清掉时间状态，让下一条记录用当前最新时间
                 for k in ("start_hour", "start_minute", "end_hour", "end_minute"):
                     if k in st.session_state:
@@ -632,19 +681,22 @@ with tab1:
 
 with tab2:
     st.subheader("历史检验记录")
-    st.caption(f"📊 共读取到 **{len(history_df)}** 条历史记录")
+    st.caption(f"📊 {'最新读取' if history_read_ok else '会话快照'}：**{len(history_df)}** 条历史记录")
     if history_df.empty:
-        st.info("暂无历史记录。")
+        if history_read_ok:
+            st.info("暂无历史记录。")
+        else:
+            st.warning("历史数据暂时无法读取，不能据此判断没有记录。请刷新重试。")
     else:
         # ---------- 筛选 ----------
         colF1, colF2, colF3 = st.columns(3)
         with colF1:
-            f_supplier = st.multiselect("按供应商筛选", SUPPLIERS)
+            f_supplier = st.multiselect("按供应商筛选", SUPPLIERS, key="f_supplier")
         with colF2:
             all_parts = history_df["零件料号"].astype(str).unique().tolist()
-            f_part = st.multiselect("按料号筛选", all_parts)
+            f_part = st.multiselect("按料号筛选", all_parts, key="f_part")
         with colF3:
-            f_result = st.multiselect("按结果筛选", RESULTS)
+            f_result = st.multiselect("按结果筛选", RESULTS, key="f_result")
 
         view = history_df.copy().reset_index(drop=True)
         # 记录原始行号，便于删除时定位
@@ -652,6 +704,8 @@ with tab2:
         if f_supplier: view = view[view["供应商"].isin(f_supplier)]
         if f_part: view = view[view["零件料号"].astype(str).isin(f_part)]
         if f_result: view = view[view["结果"].isin(f_result)]
+        if view.empty:
+            st.info("当前筛选条件没有匹配记录，请清空筛选条件查看全部。")
 
         show_cols = ["到货日期","订单号","供应商","零件料号","生产日期","来料总数量","检验数量",
                      "累计批次数","执行动作","开始时间","结束时间","检验用时(分钟)","结果","不良备注"] \
@@ -662,7 +716,7 @@ with tab2:
         st.caption("双击单元格可直接修改内容；勾选「删除」列后点下方按钮删除。修改和删除后需点「保存修改」生效。")
 
         # 全选删除
-        select_all = st.checkbox("全选（勾选后将删除全部当前显示的记录）")
+        select_all = st.checkbox("全选（勾选后将删除全部当前显示的记录）", key="history_select_all")
 
         # 构造编辑表：加一个"删除"勾选列
         editor_df = view[show_cols].copy()
@@ -693,7 +747,7 @@ with tab2:
         btn1, btn2 = st.columns(2)
 
         with btn1:
-            if st.button("💾 保存修改", type="primary", use_container_width=True):
+            if st.button("💾 保存修改", type="primary", use_container_width=True, disabled=not gsheet_ok):
                 try:
                     new_hist = history_df.copy().reset_index(drop=True)
                     view_rows = view["_行号"].tolist()
@@ -710,7 +764,7 @@ with tab2:
                     st.error(f"保存修改失败：{e}")
 
         with btn2:
-            if st.button("🗑️ 删除勾选的记录", use_container_width=True):
+            if st.button("🗑️ 删除勾选的记录", use_container_width=True, disabled=not gsheet_ok):
                 try:
                     to_delete = [view["_行号"].tolist()[i]
                                  for i in range(len(edited)) if edited.iloc[i]["删除"]]
